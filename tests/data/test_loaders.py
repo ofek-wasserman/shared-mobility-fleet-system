@@ -21,12 +21,16 @@ STATION_ROWS = [
 ]
 
 VEHICLE_ROWS = [
-    {"vehicle_id": "V001", "type": "BICYCLE", "status": "AVAILABLE",
-     "rides_since_last_treated": "2", "last_treated_date": "2026-02-01",
-     "station_id": "1", "charge_pct": ""},
-    {"vehicle_id": "V006", "type": "E_BIKE", "status": "AVAILABLE",
-     "rides_since_last_treated": "1", "last_treated_date": "2026-02-18",
-     "station_id": "1", "charge_pct": "85"},
+    {
+        "vehicle_id": "V000001", "vehicle_type": "bicycle", "status": "available",
+        "rides_since_last_treated": "3", "last_treated_date": "2025-01-16",
+        "station_id": "1",
+    },
+    {
+        "vehicle_id": "V000002", "vehicle_type": "electric_bicycle", "status": "available",
+        "rides_since_last_treated": "0", "last_treated_date": "2025-03-28",
+        "station_id": "1",
+    },
 ]
 
 
@@ -88,29 +92,23 @@ class TestVehicleDataLoader:
         result = VehicleDataLoader(csv_file).create_objects()
         assert all(isinstance(k, str) for k in result)
 
-    def test_bicycle_charge_pct_is_none(self, tmp_path):
+    def test_vehicle_type_is_string(self, tmp_path):
         csv_file = tmp_path / "vehicles.csv"
         write_csv(csv_file, VEHICLE_ROWS)
-        bicycle = VehicleDataLoader(csv_file).create_objects()["V001"]
-        assert bicycle["charge_pct"] is None
-
-    def test_ebike_charge_pct_is_int(self, tmp_path):
-        csv_file = tmp_path / "vehicles.csv"
-        write_csv(csv_file, VEHICLE_ROWS)
-        ebike = VehicleDataLoader(csv_file).create_objects()["V006"]
-        assert ebike["charge_pct"] == 85
+        vehicle = VehicleDataLoader(csv_file).create_objects()["V000001"]
+        assert vehicle["vehicle_type"] == "bicycle"
 
     def test_last_treated_date_is_date_object(self, tmp_path):
         csv_file = tmp_path / "vehicles.csv"
         write_csv(csv_file, VEHICLE_ROWS)
-        vehicle = VehicleDataLoader(csv_file).create_objects()["V001"]
+        vehicle = VehicleDataLoader(csv_file).create_objects()["V000001"]
         assert isinstance(vehicle["last_treated_date"], date)
-        assert vehicle["last_treated_date"] == date(2026, 2, 1)
+        assert vehicle["last_treated_date"] == date(2025, 1, 16)
 
     def test_rides_since_last_treated_is_int(self, tmp_path):
         csv_file = tmp_path / "vehicles.csv"
         write_csv(csv_file, VEHICLE_ROWS)
-        vehicle = VehicleDataLoader(csv_file).create_objects()["V001"]
+        vehicle = VehicleDataLoader(csv_file).create_objects()["V000001"]
         assert isinstance(vehicle["rides_since_last_treated"], int)
 
     def test_missing_file_raises(self, tmp_path):
