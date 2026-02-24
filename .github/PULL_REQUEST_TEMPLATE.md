@@ -1,16 +1,25 @@
-## Description
-Brief description of the changes.
+## Jira
+KAN-XX (link)
 
-## Related Issue
-PROJ-XXX
+## Summary (1–2 lines)
+What changed + why.
 
-## Type of Change
+## Type of change
+- [ ] Feature
 - [ ] Bug fix
-- [ ] New feature
-- [ ] Refactoring
-- [ ] Documentation
+- [ ] Refactor
+- [ ] Documentation / Repo process
+
+## Changes (bullets)
+- 
+- 
+- 
+
+## How to test
+1) 
+2) 
 
 ## Checklist
-- [ ] Code follows project style
-- [ ] Tests pass locally
-- [ ] New tests added (if needed)
+- [ ] CI green
+- [ ] Tests added/updated if needed
+- [ ] Docs updated if behavior/workflow changed
