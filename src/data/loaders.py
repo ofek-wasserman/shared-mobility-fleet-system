@@ -57,23 +57,23 @@ class StationDataLoader(DataLoader):
 
 
 class VehicleDataLoader(DataLoader):
-    """Loads vehicles.csv → dict[str, Vehicle].
+    """Loads vehicles.csv → dict[str, dict].
 
-    charge_pct is blank in the CSV for Bicycle rows (non-electric).
+    CSV columns: vehicle_id, station_id, vehicle_type, status,
+                 rides_since_last_treated, last_treated_date.
+    Keys are ``str`` vehicle IDs.
+    TODO: return Vehicle domain objects once Role 4 domain layer is ready.
     """
 
     def _parse_row(self, row: dict[str, str]) -> tuple[str, dict]:
+        """Parse one CSV row into (vehicle_id: str, vehicle_data: dict)."""
         vehicle_id = row["vehicle_id"].strip()
-        charge_raw = row.get("charge_pct", "").strip()
-
         data = {
             "vehicle_id": vehicle_id,
-            "type": row["type"].strip(),
+            "vehicle_type": row["vehicle_type"].strip(),
             "status": row["status"].strip(),
             "rides_since_last_treated": int(row["rides_since_last_treated"]),
             "last_treated_date": date.fromisoformat(row["last_treated_date"]),
             "station_id": int(row["station_id"]),
-            "charge_pct": int(charge_raw) if charge_raw else None,
         }
-        # TODO: return vehicle_id, <Vehicle subclass>(**data)  once domain models are ready
         return vehicle_id, data
