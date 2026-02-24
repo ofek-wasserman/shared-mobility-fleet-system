@@ -36,9 +36,15 @@ class DataLoader(ABC):
 
 
 class StationDataLoader(DataLoader):
-    """Loads stations.csv → dict[int, Station]."""
+    """Loads stations.csv → dict[int, dict].
+
+    CSV columns: station_id, name, lat, lon, max_capacity.
+    Keys are ``int`` station IDs.
+    TODO: return Station domain objects once Role 4 domain layer is ready.
+    """
 
     def _parse_row(self, row: dict[str, str]) -> tuple[int, dict]:
+        """Parse one CSV row into (station_id: int, station_data: dict)."""
         station_id = int(row["station_id"])
         data = {
             "station_id": station_id,
@@ -47,7 +53,6 @@ class StationDataLoader(DataLoader):
             "lon": float(row["lon"]),
             "max_capacity": int(row["max_capacity"]),
         }
-        # TODO: return station_id, Station(**data)  once domain models are ready
         return station_id, data
 
 
