@@ -6,4 +6,4 @@ class NearestStationResponse(StrictBaseModel):
     lon: float
     
 class ActiveUsersResponse(StrictBaseModel):
-    user_id: list[int]
+    user_ids: list[int]
