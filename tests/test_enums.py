@@ -1,5 +1,6 @@
 from src.domain.enums import VehicleLocation, VehicleStatus
 
+
 def test_vehicle_location_docked():
     assert VehicleLocation.DOCKED.value == "docked"
 

@@ -1,8 +1,14 @@
 from enum import Enum
 
+
+
+
 class VehicleStatus(Enum):
     AVAILABLE = "available"
     DEGRADED = "degraded"
+
+
+
 
 class VehicleLocation(Enum):
     DOCKED = "docked"
