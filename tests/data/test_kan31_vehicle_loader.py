@@ -1,4 +1,5 @@
 """Unit tests for KAN-31 — VehicleDataLoader."""
+
 import csv
 from datetime import date
 from pathlib import Path

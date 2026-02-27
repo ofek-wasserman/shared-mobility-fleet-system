@@ -8,6 +8,7 @@ from src.data.loaders import StationDataLoader, VehicleDataLoader
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+
 def write_csv(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=rows[0].keys())
@@ -16,19 +17,37 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 STATION_ROWS = [
-    {"station_id": "1", "name": "Dizengoff Sq", "lat": "32.0796", "lon": "34.7739", "max_capacity": "10"},
-    {"station_id": "2", "name": "Central Bus Station", "lat": "32.0577", "lon": "34.7799", "max_capacity": "15"},
+    {
+        "station_id": "1",
+        "name": "Dizengoff Sq",
+        "lat": "32.0796",
+        "lon": "34.7739",
+        "max_capacity": "10",
+    },
+    {
+        "station_id": "2",
+        "name": "Central Bus Station",
+        "lat": "32.0577",
+        "lon": "34.7799",
+        "max_capacity": "15",
+    },
 ]
 
 VEHICLE_ROWS = [
     {
-        "vehicle_id": "V000001", "vehicle_type": "bicycle", "status": "available",
-        "rides_since_last_treated": "3", "last_treated_date": "2025-01-16",
+        "vehicle_id": "V000001",
+        "vehicle_type": "bicycle",
+        "status": "available",
+        "rides_since_last_treated": "3",
+        "last_treated_date": "2025-01-16",
         "station_id": "1",
     },
     {
-        "vehicle_id": "V000002", "vehicle_type": "electric_bicycle", "status": "available",
-        "rides_since_last_treated": "0", "last_treated_date": "2025-03-28",
+        "vehicle_id": "V000002",
+        "vehicle_type": "electric_bicycle",
+        "status": "available",
+        "rides_since_last_treated": "0",
+        "last_treated_date": "2025-03-28",
         "station_id": "1",
     },
 ]
@@ -36,8 +55,8 @@ VEHICLE_ROWS = [
 
 # ── StationDataLoader ─────────────────────────────────────────────────────────
 
-class TestStationDataLoader:
 
+class TestStationDataLoader:
     def test_loads_correct_number_of_stations(self, tmp_path):
         csv_file = tmp_path / "stations.csv"
         write_csv(csv_file, STATION_ROWS)
@@ -65,7 +84,15 @@ class TestStationDataLoader:
         assert station["max_capacity"] == 10
 
     def test_name_is_stripped(self, tmp_path):
-        rows = [{"station_id": "1", "name": "  Central  ", "lat": "32.0", "lon": "34.0", "max_capacity": "5"}]
+        rows = [
+            {
+                "station_id": "1",
+                "name": "  Central  ",
+                "lat": "32.0",
+                "lon": "34.0",
+                "max_capacity": "5",
+            }
+        ]
         csv_file = tmp_path / "stations.csv"
         write_csv(csv_file, rows)
         station = StationDataLoader(csv_file).create_objects()[1]
@@ -78,8 +105,8 @@ class TestStationDataLoader:
 
 # ── VehicleDataLoader ─────────────────────────────────────────────────────────
 
-class TestVehicleDataLoader:
 
+class TestVehicleDataLoader:
     def test_loads_correct_number_of_vehicles(self, tmp_path):
         csv_file = tmp_path / "vehicles.csv"
         write_csv(csv_file, VEHICLE_ROWS)
