@@ -19,7 +19,7 @@ def test_user_id_must_be_positive():
 
 def test_payment_token_must_not_be_empty():
     with pytest.raises(ValueError):
-        User(user_id=1, payment_token="")
+        User(user_id=1, payment_token="") # empty string
 
     with pytest.raises(ValueError):
         User(user_id=1, payment_token=None)  # if type hints are bypassed

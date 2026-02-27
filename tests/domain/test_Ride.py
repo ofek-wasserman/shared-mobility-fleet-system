@@ -16,9 +16,9 @@ def create_valid_ride():
     )
 
 
-# --------------------------
+# ---------------------------
 # Constructor Invariants
-# --------------------------
+# ---------------------------
 
 def test_ride_creation_valid(create_valid_ride):
 
