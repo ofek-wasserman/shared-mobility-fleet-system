@@ -6,7 +6,7 @@ Tests for the health check endpoint to verify API availability and responsivenes
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.api.main import app
+from src.main import app
 
 
 @pytest.mark.anyio
