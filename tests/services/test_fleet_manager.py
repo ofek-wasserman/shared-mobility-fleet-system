@@ -24,9 +24,7 @@ class TestFleetManager:
         vehicles = {10: MagicMock()}
 
         active = ActiveRidesRegistry()
-        repo = DegradedRepo(container_id=-1, 
-                            _vehicle_ids=set(), 
-                            name="Degraded Repo")
+        repo = DegradedRepo(container_id=-1,_vehicle_ids=set(),name="Degraded Repo")
         billing = BillingService()
 
         fm = FleetManager(
