@@ -2,10 +2,10 @@
 
 from unittest.mock import MagicMock
 
+from src.domain.VehicleContainer import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
 from src.services.fleet_manager import FleetManager
-from src.domain.VehicleContainer import DegradedRepo
 
 
 class TestFleetManager:
@@ -24,7 +24,9 @@ class TestFleetManager:
         vehicles = {10: MagicMock()}
 
         active = ActiveRidesRegistry()
-        repo = DegradedRepo(container_id=-1, _vehicle_ids=set(), name="Degraded Repo")
+        repo = DegradedRepo(container_id=-1, 
+                            _vehicle_ids=set(), 
+                            name="Degraded Repo")
         billing = BillingService()
 
         fm = FleetManager(

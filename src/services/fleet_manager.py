@@ -1,42 +1,40 @@
 from typing import Optional
 
+from src.domain.user import User
 from src.domain.Vehicle import Vehicle
 from src.domain.VehicleContainer import DegradedRepo, Station
-from src.domain.ride import Ride
-from src.domain.user import User
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
 
 
 class FleetManager:
-    def __init__(self, 
+    def __init__(self,
                  stations: dict[int, Station],
                  vehicles: dict[int, Vehicle],
                 active_rides: Optional[ActiveRidesRegistry] = None,
                 degraded_repo: Optional[DegradedRepo] = None,
                 billing_service: Optional[BillingService] = None,
                  ):
-        
+
         self.users:dict[int,User] = {}
         self.stations = stations
-        self.vehicles = vehicles        
+        self.vehicles = vehicles
         self.active_rides = active_rides or ActiveRidesRegistry()
         self.degraded_repo = degraded_repo or DegradedRepo(
             container_id=-1, _vehicle_ids=set(), name="Degraded Repo"
         )
         self.billing_service = billing_service or BillingService()
-        
-    
+
+
     def register_user(self, payment_token: str) -> User:
         """
-        Registers a new user and generates a unique user_id.    
+        Registers a new user and generates a unique user_id.
         Args:
             payment_token (str): The payment token for the user.
         Returns:
             User: The newly created User object.
         Raises:
             ValueError: If the payment token is invalid or already exists.
-        
         """
         pass
 
@@ -48,8 +46,7 @@ class FleetManager:
             location (tuple[float, float]): The (latitude, longitude) of the user.
         returns:
             Ride: The newly started Ride object.
-            location (tuple[float, float]): The (latitude, longitude) of the station where the ride started.            
-        
+            location: The (lat, lon) of the station where the ride started.
         TODO:
             - check user existence
             - check user has no active ride
@@ -79,7 +76,7 @@ class FleetManager:
              - return location of the station where the ride ended
         """
         pass
-    
+
     # -----------------------------
     # Helper Functions
     # -----------------------------
@@ -89,7 +86,9 @@ class FleetManager:
         """
         pass
 
-    def _nearest_station_with_free_slot(self, location:tuple[float, float]) -> Optional[Station]:
+    def _nearest_station_with_free_slot(self,
+                                        location:tuple[float, float],
+                                        ) -> Optional[Station]:
         """
         Find the nearest station with a free slot for parking.
         Args:
@@ -99,7 +98,9 @@ class FleetManager:
         """
         pass
 
-    def _nearest_station_with_available_vehicle(self, location:tuple[float, float]) -> Optional[Station]:
+    def _nearest_station_with_available_vehicle(self,
+                                                location:tuple[float, float],
+                                                ) -> Optional[Station]:
         """
         Find the nearest station with at least one available vehicle.
         Args:
@@ -110,5 +111,4 @@ class FleetManager:
         pass
 
 
-       
-  
+
