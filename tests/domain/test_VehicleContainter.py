@@ -138,6 +138,21 @@ def test_station_capacity_edge_case_equal_capacity():
 
     assert station.has_free_slot() is False
 
+def test_station_has_available_vehicle(test_station: Station):
+    assert test_station.has_available_vehicle() is True
+
+def test_station_has_no_available_vehicle(test_station):
+    empty_station = Station(
+        container_id=5,
+        _vehicle_ids=set(),
+        name="Empty Station",
+        lat=30.0,
+        lon=40.0,
+        max_capacity=5,
+    )
+    assert empty_station.has_available_vehicle() is False
+
+
 
 def test_station_coordinates_and_capacity_stored_correctly():
     station = Station(

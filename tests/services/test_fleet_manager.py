@@ -50,3 +50,29 @@ class TestFleetManager:
         assert fm1.active_rides is not fm2.active_rides
         assert fm1.degraded_repo is not fm2.degraded_repo
         assert fm1.billing_service is not fm2.billing_service
+
+    def test_find_nearest_station_with_available_vehicle(self):
+        stations = {
+            1: MagicMock(lat=0.0, lon=0.0, has_available_vehicle=MagicMock(return_value=True), container_id=1),
+            2: MagicMock(lat=10.0, lon=10.0, has_available_vehicle=MagicMock(return_value=True), container_id=2),
+            3: MagicMock(lat=20.0, lon=20.0, has_available_vehicle=MagicMock(return_value=False), container_id=3),
+        }
+        fm = FleetManager(stations=stations, vehicles={})
+
+        nearest = fm.nearest_station_with_available_vehicle((1.0, 1.0))
+        assert nearest is stations[1]  # Station 1 is closer than Station 2
+
+        nearest = fm.nearest_station_with_available_vehicle((15.0, 15.0))
+        assert nearest is stations[2]  # Station 2 is closer than Station 1
+
+        nearest = fm.nearest_station_with_available_vehicle((100.0, 100.0))
+        assert nearest is stations[2]  # Station 2 is the only one with available vehicles
+
+    def test_nearest_station_returns_none_when_no_available(self):
+        stations = {
+            1: MagicMock(lat=0.0, lon=0.0, has_available_vehicle=MagicMock(return_value=False), container_id=1),
+            2: MagicMock(lat=1.0, lon=1.0, has_available_vehicle=MagicMock(return_value=False), container_id=2),
+        }
+        fm = FleetManager(stations=stations, vehicles={})
+
+        assert fm.nearest_station_with_available_vehicle((0.0, 0.0)) is None
