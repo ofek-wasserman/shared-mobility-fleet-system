@@ -43,3 +43,4 @@ class StationDataLoader(DataLoader):
             max_capacity=int(row["max_capacity"]),
         )
         return station_id, station
+        
