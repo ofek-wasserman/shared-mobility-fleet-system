@@ -36,7 +36,7 @@ class FleetManager:
         Raises:
             ValueError: If the payment token is invalid or already exists.
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def start_ride(self, user_id: int, location:tuple[float, float]) -> dict[str, any]:
         """
@@ -55,7 +55,7 @@ class FleetManager:
             - store ride information in active rides registry
             - return ride object
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def end_ride(self, ride_id: int, location:tuple[float, float]) -> dict[str, any]:
         """
@@ -75,7 +75,7 @@ class FleetManager:
              - if ride_since_last_treated > threshold, move vehicle to degraded repo
              - return location of the station where the ride ended
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     # -----------------------------
     # Helper Functions
@@ -84,7 +84,7 @@ class FleetManager:
         """
         Generates a new unique ride ID. In a real implementation, this could be more robust.
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
@@ -96,7 +96,7 @@ class FleetManager:
         Returns:
             Station: The nearest station with a free slot.
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def _nearest_station_with_available_vehicle(self,
                                                 location:tuple[float, float],
@@ -108,7 +108,7 @@ class FleetManager:
         Returns:
             Station: The nearest station with an available vehicle.
         """
-        pass
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
 
 
