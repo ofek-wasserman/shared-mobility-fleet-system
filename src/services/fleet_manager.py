@@ -39,17 +39,17 @@ class FleetManager:
         Raises:
             ValueError: If the payment token is invalid or already exists.
         """
-        if not isinstance(payment_token, str) or not payment_token.strip():
+        if not isinstance(payment_token, str):
             raise ValueError("Invalid payment token provided.")
 
-        if payment_token in self._registered_tokens:
+        if payment_token.strip() in self._registered_tokens:
             raise ValueError("Payment token already registered.")
 
         new_user_id = max(self.users.keys(), default=0) + 1
         new_user = User(user_id=new_user_id, payment_token=payment_token)
         # Update both data structures to maintain state consistency
         self.users[new_user_id] = new_user
-        self._registered_tokens.add(payment_token)
+        self._registered_tokens.add(payment_token.strip())
         return new_user_id
 
     def start_ride(self, user_id: int, location:tuple[float, float]) -> dict[str, any]:

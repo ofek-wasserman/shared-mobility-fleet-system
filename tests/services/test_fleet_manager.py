@@ -69,3 +69,14 @@ class TestFleetManager:
 
         with pytest.raises(ValueError):
             fm.register_user("tok_test")
+
+    def test_invalid_payment_token_raises_error(self):
+        fm = FleetManager(stations={}, vehicles={})
+        with pytest.raises(ValueError):
+            fm.register_user("")
+        with pytest.raises(ValueError):
+            fm.register_user(None)
+        fm.register_user("test")    
+        with pytest.raises(ValueError):
+            fm.register_user("test ")
+        
