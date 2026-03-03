@@ -16,7 +16,13 @@ Note:
 
 from fastapi import APIRouter, HTTPException
 
-from src.api.schemas.rides import ActiveUsersResponse, EndRideRequest, EndRideResponse, StartRideRequest, StartRideResponse
+from src.api.schemas.rides import (
+    ActiveUsersResponse,
+    EndRideRequest,
+    EndRideResponse,
+    StartRideRequest,
+    StartRideResponse,
+)
 
 router = APIRouter()
 

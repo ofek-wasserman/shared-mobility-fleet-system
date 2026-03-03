@@ -1,11 +1,11 @@
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 from httpx import AsyncClient
 
 from src.main import app
 
-    
+
 @pytest.fixture
 async def client() -> AsyncIterator[AsyncClient]:
 
