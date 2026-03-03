@@ -25,6 +25,10 @@ class FleetManager:
         )
         self.billing_service = billing_service or BillingService()
 
+        self._initialize_state()
+
+
+
 
     def register_user(self, payment_token: str) -> User:
         """
@@ -80,11 +84,22 @@ class FleetManager:
     # -----------------------------
     # Helper Functions
     # -----------------------------
-    def _generate_ride_id(self) -> int:
+
+
+    def _initialize_state(self):
         """
-        Generates a new unique ride ID. In a real implementation, this could be more robust.
+        check all vehicles and if any is ineligible, add to
+        degraded repo and mark as degraded
+        and remove from station inventory
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        for vehicle_id, vehicle in self.vehicles.items():
+            if not vehicle.is_eligible():
+                # add to degraded repo and mark as degraded
+                self.degraded_repo.add_vehicle(vehicle_id)
+                vehicle.mark_degraded()
+                # remove from station inventory
+                station = self.stations.get(vehicle.station_id)
+                station.remove_vehicle(vehicle_id)
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
