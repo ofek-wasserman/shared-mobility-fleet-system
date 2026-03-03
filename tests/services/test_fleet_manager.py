@@ -76,7 +76,7 @@ class TestFleetManager:
             fm.register_user("")
         with pytest.raises(ValueError):
             fm.register_user(None)
-        fm.register_user("test")    
+        fm.register_user("test")
         with pytest.raises(ValueError):
             fm.register_user("test ")
-        
+
