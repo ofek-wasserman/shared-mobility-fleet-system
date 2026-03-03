@@ -24,7 +24,8 @@ router = APIRouter()
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_200_OK)
 async def register_user(_req: RegisterRequest,
-                        fleet_manager: FleetManager = Depends(get_fleet_manager)) -> RegisterResponse:
+                        fleet_manager: FleetManager =
+                        Depends(get_fleet_manager)) -> RegisterResponse:
     """Register a new user account.
 
     Creates a new user account with the provided credentials and personal information.
@@ -37,7 +38,6 @@ async def register_user(_req: RegisterRequest,
     Raises:
         HTTPException: 501 Not Implemented - Feature not yet available.
         HTTPException: 400 Bad Request - Invalid email format or weak password.
-        
 
     Example:
         >>> response = await register_user()
@@ -47,7 +47,6 @@ async def register_user(_req: RegisterRequest,
         - Implement user creation and validation
         - Hash and securely store passwords
         - Generate authentication tokens
-        
     """
     try:
         user_id = fleet_manager.register_user(payment_token=_req.payment_token)
