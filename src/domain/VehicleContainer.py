@@ -118,6 +118,14 @@ class Station(VehicleContainer):
         """
         return self.count() < self.max_capacity
 
+    def has_available_vehicle(self) -> bool:
+        """
+        Determine whether the station has at least one vehicle available.
+
+        Used by Service layer during ride start logic.
+        """
+        return self.count() > 0
+
 
 class DegradedRepo(VehicleContainer):
     """

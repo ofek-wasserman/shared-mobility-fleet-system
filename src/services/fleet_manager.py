@@ -1,3 +1,4 @@
+import math
 from typing import Optional
 
 from src.domain.user import User
@@ -29,7 +30,31 @@ class FleetManager:
         self._registered_tokens: set[str] = set()
         self._initialize_state()
 
+    #-----------------------------
+    # initializer vehicle state normalization
+    #-----------------------------
+    def _initialize_state(self) -> None:
+        """Normalize loaded state: move ineligible vehicles to degraded repo."""
+        for vehicle_id, vehicle in self.vehicles.items():
+            if vehicle.is_eligible():
+                continue
 
+            self.degraded_repo.add_vehicle(vehicle_id)
+            vehicle.mark_degraded()
+
+            if vehicle.station_id is None:
+                continue
+
+            station = self.stations.get(vehicle.station_id)
+            if station is not None:
+                station.remove_vehicle(vehicle_id)
+
+            # degraded vehicles shouldn't be assigned to a station
+            vehicle.station_id = None
+
+    #-----------------------------
+    # Public API
+    #-----------------------------
     def register_user(self, payment_token: str) -> int:
         """
         Registers a new user and generates a unique user_id.
@@ -92,30 +117,60 @@ class FleetManager:
         """
         NotImplementedError("KAN-21: Implement FleetManager Class")
 
+    def nearest_station_with_available_vehicle(self,
+                                                location:tuple[float, float],
+                                                ) -> Optional[Station]:
+        """
+        Find the nearest station with at least one available vehicle.
+        Args:
+            location (tuple[float, float]): The (latitude, longitude) of the user.
+        Returns:
+            Station: The nearest station with an available vehicle.
+        """
+        if not isinstance(location, tuple) or len(location) != 2:
+            raise ValueError("Invalid location format. Expected Tuple[float, float].")
+
+        valid_stations = [station for station in self.stations.values() if
+                          station.has_available_vehicle()]
+        if not valid_stations:
+            return None
+
+        nearest = min(valid_stations,
+                      key=lambda station:
+                      (self._distance(location, (station.lat, station.lon)),
+                       station.container_id)
+                   )
+        return nearest
+
     # -----------------------------
     # Helper Functions
     # -----------------------------
+    def _distance(self, loc1:tuple[float, float], loc2:tuple[float, float]) -> float:
+        """
+        Calculate the distance between two locations.
+        Args:
+            loc1 (tuple[float, float]): The (latitude, longitude) of the first location.
+            loc2 (tuple[float, float]): The (latitude, longitude) of the second location.
+        Returns:
+            float: The distance between the two locations.
+        """
+        if not isinstance(loc1, tuple) or not isinstance(loc2, tuple):
+                raise TypeError("Coordinates must be strictly of type Tuple[float, float].")
 
+        if len(loc1) != 2 or len(loc2) != 2:
+            raise ValueError("Coordinates must contain exactly two dimensions (x, y).")
 
-    def _initialize_state(self) -> None:
-        """Normalize loaded state: move ineligible vehicles to degraded repo."""
-        for vehicle_id, vehicle in self.vehicles.items():
-            if vehicle.is_eligible():
-                continue
+        # Prevent NaN propagation which breaks the deterministic min() function downstream
+        if math.isnan(loc1[0]) or math.isnan(loc1[1]) or math.isnan(loc2[0]) or math.isnan(loc2[1]):
+            raise ValueError("Coordinates cannot contain NaN values.")
 
-            self.degraded_repo.add_vehicle(vehicle_id)
-            vehicle.mark_degraded()
+        return math.dist(loc1, loc2)
 
-            if vehicle.station_id is None:
-                continue
-
-            station = self.stations.get(vehicle.station_id)
-            if station is not None:
-                station.remove_vehicle(vehicle_id)
-
-            # degraded vehicles shouldn't be assigned to a station
-            vehicle.station_id = None
-
+    def _generate_ride_id(self) -> int:
+        """
+        Generates a new unique ride ID. In a real implementation, this could be more robust.
+        """
+        NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
@@ -129,17 +184,6 @@ class FleetManager:
         """
         NotImplementedError("KAN-21: Implement FleetManager Class")
 
-    def _nearest_station_with_available_vehicle(self,
-                                                location:tuple[float, float],
-                                                ) -> Optional[Station]:
-        """
-        Find the nearest station with at least one available vehicle.
-        Args:
-            location (tuple[float, float]): The (latitude, longitude) of the user.
-        Returns:
-            Station: The nearest station with an available vehicle.
-        """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
 
 
 
