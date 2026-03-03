@@ -27,9 +27,6 @@ class FleetManager:
 
         self._initialize_state()
 
-
-
-
     def register_user(self, payment_token: str) -> User:
         """
         Registers a new user and generates a unique user_id.
@@ -86,20 +83,25 @@ class FleetManager:
     # -----------------------------
 
 
-    def _initialize_state(self):
-        """
-        check all vehicles and if any is ineligible, add to
-        degraded repo and mark as degraded
-        and remove from station inventory
-        """
+    def _initialize_state(self) -> None:
+        """Normalize loaded state: move ineligible vehicles to degraded repo."""
         for vehicle_id, vehicle in self.vehicles.items():
-            if not vehicle.is_eligible():
-                # add to degraded repo and mark as degraded
-                self.degraded_repo.add_vehicle(vehicle_id)
-                vehicle.mark_degraded()
-                # remove from station inventory
-                station = self.stations.get(vehicle.station_id)
+            if vehicle.is_eligible():
+                continue
+
+            self.degraded_repo.add_vehicle(vehicle_id)
+            vehicle.mark_degraded()
+
+            if vehicle.station_id is None:
+                continue
+
+            station = self.stations.get(vehicle.station_id)
+            if station is not None:
                 station.remove_vehicle(vehicle_id)
+
+            # degraded vehicles shouldn't be assigned to a station
+            vehicle.station_id = None
+
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
