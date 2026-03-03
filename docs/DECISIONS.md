@@ -84,13 +84,23 @@ The following invariants must always hold during runtime.
 Vehicle Eligibility (Phase 1)
 ----------------------------------------
 
-A vehicle is considered eligible if:
+A vehicle is considered eligible (rentable) if:
 
 - status == AVAILABLE
 - active_ride_id is None
-- rides_since_last_treated < MAINTENANCE_THRESHOLD
+- rides_since_last_treated <= 10
 
-The maintenance threshold value must be defined consistently across the system.
+Vehicle degradation rules:
+
+- A vehicle becomes unrentable (degraded) if:
+  - rides_since_last_treated > 10, or
+  - a user reports it as degraded
+
+Maintenance / treatment rules:
+
+- Treatment may be initiated only on:
+  - degraded vehicles, or
+  - vehicles with rides_since_last_treated >= 7
 
 Eligibility rules may expand in Phase 2, but the concept of eligibility remains centralized in the service layer.
 
@@ -105,8 +115,8 @@ Vehicles that are not eligible must not remain in regular stations.
 Specifically:
 
 - Vehicles currently in ride belong to the Active Rides registry.
-- Broken or reported vehicles belong to the Degraded Repository.
-- Vehicles exceeding the maintenance threshold belong to the Degraded Repository.
+- Vehicles reported as degraded belong to the Degraded Repository.
+- Vehicles with rides_since_last_treated > 10 belong to the Degraded Repository.
 
 ----------------------------------------
 Bootstrap Normalization Rule
