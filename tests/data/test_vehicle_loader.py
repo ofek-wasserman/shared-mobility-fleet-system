@@ -37,6 +37,13 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+def _write_csv_fieldnames(path: Path, fieldnames: list[str], rows: list[dict]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 class TestVehicleDataLoader:
     def test_loads_correct_count(self, tmp_path):
         csv_file = tmp_path / "vehicles.csv"
@@ -110,4 +117,57 @@ class TestVehicleDataLoader:
         csv_file = tmp_path / "bad.csv"
         _write_csv(csv_file, bad_row)
         with pytest.raises(ValueError, match="Unknown vehicle type"):
+            VehicleDataLoader(csv_file).create_objects()
+
+
+# ---------------------------------------------------------------------------
+# Column validation (KAN-52)
+# ---------------------------------------------------------------------------
+
+REQUIRED_VEHICLE_COLUMNS = [
+    "vehicle_id",
+    "vehicle_type",
+    "status",
+    "rides_since_last_treated",
+    "last_treated_date",
+    "station_id",
+]
+
+
+class TestVehicleColumnValidation:
+    @pytest.mark.parametrize("missing_col", REQUIRED_VEHICLE_COLUMNS)
+    def test_raises_value_error_when_single_column_missing(self, tmp_path, missing_col):
+        columns = [c for c in REQUIRED_VEHICLE_COLUMNS if c != missing_col]
+        csv_file = tmp_path / "vehicles.csv"
+        _write_csv_fieldnames(csv_file, columns, [])
+        with pytest.raises(ValueError):
+            VehicleDataLoader(csv_file).create_objects()
+
+    def test_raises_value_error_when_multiple_columns_missing(self, tmp_path):
+        csv_file = tmp_path / "vehicles.csv"
+        _write_csv_fieldnames(csv_file, ["vehicle_id"], [])
+        with pytest.raises(ValueError):
+            VehicleDataLoader(csv_file).create_objects()
+
+    def test_error_message_names_the_missing_column(self, tmp_path):
+        columns = [c for c in REQUIRED_VEHICLE_COLUMNS if c != "vehicle_type"]
+        csv_file = tmp_path / "vehicles.csv"
+        _write_csv_fieldnames(csv_file, columns, [])
+        with pytest.raises(ValueError, match="vehicle_type"):
+            VehicleDataLoader(csv_file).create_objects()
+
+    def test_extra_columns_beyond_required_are_allowed(self, tmp_path):
+        csv_file = tmp_path / "vehicles.csv"
+        _write_csv_fieldnames(
+            csv_file,
+            REQUIRED_VEHICLE_COLUMNS + ["extra_col"],
+            [{**VEHICLE_ROWS[0], "extra_col": "x"}],
+        )
+        result = VehicleDataLoader(csv_file).create_objects()
+        assert len(result) == 1
+
+    def test_empty_header_raises_value_error(self, tmp_path):
+        csv_file = tmp_path / "vehicles.csv"
+        csv_file.write_text("")
+        with pytest.raises(ValueError):
             VehicleDataLoader(csv_file).create_objects()

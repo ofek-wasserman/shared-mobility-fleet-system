@@ -65,6 +65,15 @@ class StationDataLoader(DataLoader):
 class VehicleDataLoader(DataLoader):
     """Loads vehicles.csv -> dict[str, Vehicle]"""
 
+    REQUIRED_COLUMNS = frozenset({
+        "vehicle_id",
+        "vehicle_type",
+        "status",
+        "rides_since_last_treated",
+        "last_treated_date",
+        "station_id",
+    })
+
     def _parse_row(self, row: dict[str, str]) -> tuple[str, Vehicle]:
         vehicle_id = row["vehicle_id"].strip()
         vehicle_type = row["vehicle_type"].strip()
