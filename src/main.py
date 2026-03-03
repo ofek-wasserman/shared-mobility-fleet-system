@@ -4,9 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from src.api.bootstrap import build_fleet_manager
 from src.api.router import api_router
-from src.data.loaders import StationDataLoader, VehicleDataLoader
-from src.services.fleet_manager import FleetManager
 
 
 def create_app() -> FastAPI:
@@ -16,17 +15,11 @@ def create_app() -> FastAPI:
         version="1.0.0",
     )
 
-    # -----------------------------
-    # Bootstrap: load initial state
-    # -----------------------------
-    stations_path = Path("data/stations.csv")
-    vehicles_path = Path("data/vehicles.csv")
-
-    stations = StationDataLoader(stations_path).create_objects()
-    vehicles = VehicleDataLoader(vehicles_path).create_objects()
-
-    # Single FleetManager instance for the whole app lifetime
-    app.state.fleet_manager = FleetManager(stations=stations, vehicles=vehicles)
+    # Bootstrap: load initial state + build FleetManager once for app lifetime
+    app.state.fleet_manager = build_fleet_manager(
+        stations_path=Path("data/stations.csv"),
+        vehicles_path=Path("data/vehicles.csv"),
+    )
 
     # Routes
     app.include_router(api_router)

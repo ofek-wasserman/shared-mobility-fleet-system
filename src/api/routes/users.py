@@ -12,11 +12,12 @@ Note:
     in future development iterations.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..dependencies import get_fleet_manager
 from src.api.schemas.users import RegisterRequest, RegisterResponse
 from src.services.fleet_manager import FleetManager
+
+from ..dependencies import get_fleet_manager
 
 router = APIRouter()
 
