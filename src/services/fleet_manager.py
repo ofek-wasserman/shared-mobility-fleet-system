@@ -1,6 +1,7 @@
 import math
 from typing import Optional
 
+from src.domain.exceptions import ConflictError, InvalidInputError
 from src.domain.user import User
 from src.domain.Vehicle import Vehicle
 from src.domain.VehicleContainer import DegradedRepo, Station
@@ -58,24 +59,25 @@ class FleetManager:
     def register_user(self, payment_token: str) -> int:
         """
         Registers a new user and generates a unique user_id.
-        Args:
-            payment_token (str): The payment token for the user.
-        Returns:
-            int: The newly created user_id.
         Raises:
-            ValueError: If the payment token is invalid or already exists.
+            InvalidInputError: If the payment token is invalid.
+            ConflictError: If the payment token already exists.
         """
         if not isinstance(payment_token, str):
-            raise ValueError("Invalid payment token provided.")
+            raise InvalidInputError("Invalid payment token provided.")
 
-        if payment_token.strip() in self._registered_tokens:
-            raise ValueError("Payment token already registered.")
+        token = payment_token.strip()
+        if not token:
+            raise InvalidInputError("Payment token must be non-empty.")
+
+        if token in self._registered_tokens:
+            raise ConflictError("Payment token already registered.")
 
         new_user_id = max(self.users.keys(), default=0) + 1
-        new_user = User(user_id=new_user_id, payment_token=payment_token)
-        # Update both data structures to maintain state consistency
+        new_user = User(user_id=new_user_id, payment_token=token)
+
         self.users[new_user_id] = new_user
-        self._registered_tokens.add(payment_token.strip())
+        self._registered_tokens.add(token)
         return new_user_id
 
     def start_ride(self, user_id: int, location:tuple[float, float]) -> dict[str, any]:
@@ -95,7 +97,7 @@ class FleetManager:
             - store ride information in active rides registry
             - return ride object
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def end_ride(self, ride_id: int, location:tuple[float, float]) -> dict[str, any]:
         """
@@ -115,7 +117,7 @@ class FleetManager:
              - if ride_since_last_treated > threshold, move vehicle to degraded repo
              - return location of the station where the ride ended
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def nearest_station_with_available_vehicle(self,
                                                 location:tuple[float, float],
@@ -128,7 +130,7 @@ class FleetManager:
             Station: The nearest station with an available vehicle.
         """
         if not isinstance(location, tuple) or len(location) != 2:
-            raise ValueError("Invalid location format. Expected Tuple[float, float].")
+            raise InvalidInputError("Invalid location format. Expected Tuple[float, float].")
 
         valid_stations = [station for station in self.stations.values() if
                           station.has_available_vehicle()]
@@ -155,14 +157,13 @@ class FleetManager:
             float: The distance between the two locations.
         """
         if not isinstance(loc1, tuple) or not isinstance(loc2, tuple):
-                raise TypeError("Coordinates must be strictly of type Tuple[float, float].")
+            raise InvalidInputError("Coordinates must be strictly of type Tuple[float, float].")
 
         if len(loc1) != 2 or len(loc2) != 2:
-            raise ValueError("Coordinates must contain exactly two dimensions (x, y).")
+            raise InvalidInputError("Coordinates must contain exactly two dimensions (x, y).")
 
-        # Prevent NaN propagation which breaks the deterministic min() function downstream
         if math.isnan(loc1[0]) or math.isnan(loc1[1]) or math.isnan(loc2[0]) or math.isnan(loc2[1]):
-            raise ValueError("Coordinates cannot contain NaN values.")
+            raise InvalidInputError("Coordinates cannot contain NaN values.")
 
         return math.dist(loc1, loc2)
 
@@ -170,7 +171,7 @@ class FleetManager:
         """
         Generates a new unique ride ID. In a real implementation, this could be more robust.
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
@@ -182,7 +183,7 @@ class FleetManager:
         Returns:
             Station: The nearest station with a free slot.
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
 
 
 
