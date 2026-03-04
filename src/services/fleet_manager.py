@@ -35,42 +35,43 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-    """Normalize loaded state after CSV bootstrap (Phase 1).
+        """Normalize loaded state after CSV bootstrap (Phase 1).
 
-    Assumptions:
-    - CSV bootstrap must not contain active rides.
-    - Stations are loaded empty (no vehicle inventory).
-    - Vehicles contain station_id.
+        Assumptions:
+        - CSV bootstrap must not contain active rides.
+        - Stations are loaded empty (no vehicle inventory).
+        - Vehicles contain station_id.
 
-    Goals:
-    - Build station inventories from vehicles.
-    - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
-    """
-    for vehicle_id, vehicle in self.vehicles.items():
-        # Phase 1 contract: no active rides at bootstrap
-        if getattr(vehicle, "active_ride_id", None) is not None:
-            raise InvalidInputError(
-                f"Invalid bootstrap state: vehicle {vehicle_id} has active_ride_id={vehicle.active_ride_id}"
-            )
+        Goals:
+        - Build station inventories from vehicles.
+        - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
+        """
+        for vehicle_id, vehicle in self.vehicles.items():
+            # Phase 1 contract: no active rides at bootstrap
+            if getattr(vehicle, "active_ride_id", None) is not None:
+                raise InvalidInputError(
+                    "Invalid bootstrap state: vehicle "
+                    f"{vehicle_id} has active_ride_id={vehicle.active_ride_id}"
+                )
 
-        # Not eligible -> move to degraded and detach from station
-        if not vehicle.is_eligible():
-            self.degraded_repo.add_vehicle(vehicle_id)
-            vehicle.mark_degraded()
-            vehicle.station_id = None
-            continue
+            # Not eligible -> move to degraded and detach from station
+            if not vehicle.is_eligible():
+                self.degraded_repo.add_vehicle(vehicle_id)
+                vehicle.mark_degraded()
+                vehicle.station_id = None
+                continue
 
-        # Eligible -> must belong to a valid station
-        if vehicle.station_id is None:
-            raise InvalidInputError(f"Eligible vehicle {vehicle_id} has no station_id")
+            # Eligible -> must belong to a valid station
+            if vehicle.station_id is None:
+                raise InvalidInputError(f"Eligible vehicle {vehicle_id} has no station_id")
 
-        station = self.stations.get(vehicle.station_id)
-        if station is None:
-            raise InvalidInputError(
-                f"Vehicle {vehicle_id} references unknown station_id={vehicle.station_id}"
-            )
+            station = self.stations.get(vehicle.station_id)
+            if station is None:
+                raise InvalidInputError(
+                    f"Vehicle {vehicle_id} references unknown station_id={vehicle.station_id}"
+                )
 
-        station.add_vehicle(vehicle_id)
+            station.add_vehicle(vehicle_id)
 
     #-----------------------------
     # Public API

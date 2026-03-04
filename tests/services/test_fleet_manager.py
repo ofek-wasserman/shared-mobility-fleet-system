@@ -135,7 +135,7 @@ class TestFleetManager:
         stations = {1: station}
         vehicles = {"V105": vehicle}
 
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidInputError):
             FleetManager(stations=stations, vehicles=vehicles)
 
     # -----------------------------
