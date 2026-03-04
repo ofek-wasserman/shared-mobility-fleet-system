@@ -1,5 +1,6 @@
 """Tests for FleetManager (orchestration skeleton + DI + in-memory state)."""
 
+import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -177,4 +178,100 @@ class TestFleetManager:
 
         assert fm.nearest_station_with_available_vehicle((0.0, 0.0)) is None
 
+    #-----------------------------
+    # Ride start Tests
+    #-----------------------------
+    def test_start_ride_user_does_not_exist_raises(self):
+        fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
+        fm.users = {}
 
+        with pytest.raises(ValueError, match="User does not exist"):
+            fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+    def test_start_ride_user_already_has_active_ride_raises(self):
+        fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+
+        # simulate active ride for user
+        fm.active_rides.rides_by_user[1] = 999
+
+        with pytest.raises(ValueError, match="already has an active ride"):
+            fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+    def test_start_ride_no_station_available_returns_none_payload(self):
+        fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=None)
+
+        result = fm.start_ride(user_id=1, location=(0.0, 0.0))
+        assert result == {"ride": None, "location": None}
+
+    def test_start_ride_happy_path_registers_ride_and_mutates_station_vehicle(self, monkeypatch):
+        fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+
+        # Station with vehicles {10, 11}
+        station = MagicMock()
+        station.lat = 10.0
+        station.lon = 20.0
+        station.container_id = 7
+        station.get_vehicle_ids.return_value = {10, 11}
+        station.remove_vehicle = MagicMock()
+
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=station)
+
+        # Vehicles - selection is based on (rides_since_last_treated, vid) in your code
+        v10 = MagicMock(rides_since_last_treated=5)
+        v10.checkout_to_ride = MagicMock()
+        v11 = MagicMock(rides_since_last_treated=1)
+        v11.checkout_to_ride = MagicMock()
+        fm.vehicles = {10: v10, 11: v11}
+
+        fm._generate_ride_id = MagicMock(return_value=123)
+
+        # IMPORTANT: your implementation must generate ride_id before checkout_to_ride
+        # If it's still after, this test will crash with UnboundLocalError.
+        result = fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+        station.remove_vehicle.assert_called_once_with(11)
+        v11.checkout_to_ride.assert_called_once_with(ride_id=123)
+        v10.checkout_to_ride.assert_not_called()
+
+        ride = result["ride"]
+        assert ride.ride_id == 123
+        assert ride.user_id == 1
+        assert ride.vehicle_id == 11
+        assert ride.start_station_id == 7
+        assert isinstance(ride.start_time, datetime.datetime)
+
+        # Confirm registry contains it
+        assert fm.active_rides.get(123) is ride
+        assert fm.active_rides.has_active_ride_for_user(1) is True
+
+        assert result["location"] == (10.0, 20.0)
+
+    def test_start_ride_when_registry_rejects_ride_raises_value_error(self):
+        fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+
+        station = MagicMock()
+        station.lat = 0.0
+        station.lon = 0.0
+        station.container_id = 1
+        station.get_vehicle_ids.return_value = {10}
+        station.remove_vehicle = MagicMock()
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=station)
+
+        v10 = MagicMock(rides_since_last_treated=0)
+        v10.checkout_to_ride = MagicMock()
+        fm.vehicles = {10: v10}
+
+        fm._generate_ride_id = MagicMock(return_value=999)
+
+        # Pre-fill registry with ride_id=999 to force add() ValueError
+        fm.active_rides.rides[999] = MagicMock()
+        fm.active_rides.rides_by_user[123] = 999  # doesn't matter which user
+
+        with pytest.raises(ValueError, match="Cannot start ride:"):
+            fm.start_ride(user_id=1, location=(0.0, 0.0))

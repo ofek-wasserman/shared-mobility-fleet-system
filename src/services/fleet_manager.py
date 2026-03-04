@@ -1,6 +1,8 @@
+import datetime
 import math
 from typing import Optional
 
+from src.domain.ride import Ride
 from src.domain.user import User
 from src.domain.Vehicle import Vehicle
 from src.domain.VehicleContainer import DegradedRepo, Station
@@ -87,15 +89,44 @@ class FleetManager:
         returns:
             Ride: The newly started Ride object.
             location: The (lat, lon) of the station where the ride started.
-        TODO:
-            - check user existence
-            - check user has no active ride
-            - find nearest station with available vehicle
-            - assign vehicle to user and remove from station inventory
-            - store ride information in active rides registry
-            - return ride object
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        if user_id not in self.users:
+            raise ValueError("User does not exist.")
+
+        if self.active_rides.has_active_ride_for_user(user_id):
+            raise ValueError("User already has an active ride.")
+
+        nearest_station = self.nearest_station_with_available_vehicle(location)
+        if nearest_station is None:
+            return{"ride": None, "location": None}
+
+        vehicle = nearest_station.get_vehicle_ids()
+        #determine which vehicle to assign (the least usage and smallest ID for tie-breaking)
+        select_vehicle_id = min(vehicle, key=lambda vid:
+                                (self.vehicles[vid].rides_since_last_treated, vid))
+
+        ride_id = self._generate_ride_id()
+
+        nearest_station.remove_vehicle(select_vehicle_id)
+        self.vehicles[select_vehicle_id].checkout_to_ride(ride_id=ride_id)
+
+        # Create the Ride object and add it to the active rides registry
+        ride: Ride = Ride(ride_id=ride_id,
+                          user_id=user_id,
+                          vehicle_id=select_vehicle_id,
+                          start_time=datetime.datetime.now(),
+                          start_station_id=nearest_station.container_id,
+                          )
+
+        try:
+            self.active_rides.add(ride)
+        except ValueError as e:
+            raise ValueError(f"Cannot start ride: {e}") from e
+
+        return {
+            "ride": ride,
+            "location": (nearest_station.lat, nearest_station.lon)
+        }
 
     def end_ride(self, ride_id: int, location:tuple[float, float]) -> dict[str, any]:
         """
@@ -170,7 +201,7 @@ class FleetManager:
         """
         Generates a new unique ride ID. In a real implementation, this could be more robust.
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        return max(self.active_rides.rides.keys(), default=0) + 1
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
@@ -183,7 +214,3 @@ class FleetManager:
             Station: The nearest station with a free slot.
         """
         NotImplementedError("KAN-21: Implement FleetManager Class")
-
-
-
-
