@@ -25,6 +25,7 @@ def create_app() -> FastAPI:
         version="1.0.0",
         lifespan=lifespan,
     )
+
     app.include_router(api_router)
 
     @app.exception_handler(RequestValidationError)
