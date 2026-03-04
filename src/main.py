@@ -1,10 +1,9 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 
+from src.api.exceptions_handler import register_exception_handlers
 from src.api.router import api_router
 from src.bootstrap import build_fleet_manager
 
@@ -27,13 +26,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
-
-    @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(
-        _request: Request, exc: RequestValidationError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=400, content={"detail": exc.errors()})
-
+    register_exception_handlers(app)
     return app
 
 

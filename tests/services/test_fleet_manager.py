@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.domain.exceptions import ConflictError, InvalidInputError
 from src.domain.VehicleContainer import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
@@ -138,17 +139,17 @@ class TestFleetManager:
         fm = FleetManager(stations={}, vehicles={})
         fm.register_user("tok_test")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ConflictError):
             fm.register_user("tok_test")
 
     def test_invalid_payment_token_raises_error(self):
         fm = FleetManager(stations={}, vehicles={})
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidInputError):
             fm.register_user("")
-        with pytest.raises(ValueError):
+        with pytest.raises(InvalidInputError):
             fm.register_user(None)
         fm.register_user("test")
-        with pytest.raises(ValueError):
+        with pytest.raises(ConflictError):
             fm.register_user("test ")
 
     #-----------------------------
