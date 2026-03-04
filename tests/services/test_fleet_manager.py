@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.domain.exceptions import ConflictError, InvalidInputError
 from src.domain.VehicleContainer import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
@@ -46,6 +47,8 @@ class TestFleetManager:
         degraded_repo.add_vehicle.assert_not_called()
         vehicle.mark_degraded.assert_not_called()
         station.remove_vehicle.assert_not_called()
+        station.add_vehicle.assert_called_once_with("V101")
+
 
     def test_initialize_state_ineligible_vehicle_moved_and_removed(self):
         station = MagicMock()
@@ -68,7 +71,6 @@ class TestFleetManager:
 
         degraded_repo.add_vehicle.assert_called_once_with("V202")
         vehicle.mark_degraded.assert_called_once()
-        station.remove_vehicle.assert_called_once_with("V202")
 
     def test_initialize_state_ineligible_vehicle_missing_station(self):
         # station_id points to a station that doesn't exist -> should not crash
@@ -136,9 +138,9 @@ class TestFleetManager:
         with pytest.raises(ValueError):
             FleetManager(stations=stations, vehicles=vehicles)
 
-    #-----------------------------
+    # -----------------------------
     # User Registration Tests
-    #-----------------------------
+    # -----------------------------
     def test_register_user_creates_and_stores_user_and_returns_id(self):
         fm = FleetManager(stations={}, vehicles={})
 
@@ -149,35 +151,48 @@ class TestFleetManager:
         assert fm.users[user_id].user_id == user_id
         assert fm.users[user_id].payment_token == "tok_test"
 
-    def test_register_user_rejects_duplicate_payment_token(self):
-        fm = FleetManager(stations={}, vehicles={})
-        fm.register_user("tok_test")
-
-        with pytest.raises(ValueError):
-            fm.register_user("tok_test")
 
     def test_register_user_rejects_blank_token(self):
         fm = FleetManager(stations={}, vehicles={})
-        with pytest.raises(ValueError):
+
+        with pytest.raises(InvalidInputError):
             fm.register_user("")
-        with pytest.raises(ValueError):
+
+        with pytest.raises(InvalidInputError):
             fm.register_user("   ")
 
-    def test_register_user_rejects_whitespace_variant_duplicate(self):
-        fm = FleetManager(stations={}, vehicles={})
-        fm.register_user("tok")
-        with pytest.raises(ValueError):
-            fm.register_user(" tok ")
-
-    def test_register_user_stores_normalized_token(self):
-        fm = FleetManager(stations={}, vehicles={})
-        user_id = fm.register_user(" tok_test ")
-        assert fm.users[user_id].payment_token == "tok_test"
 
     def test_register_user_rejects_non_string_token(self):
         fm = FleetManager(stations={}, vehicles={})
-        with pytest.raises(ValueError):
+
+        with pytest.raises(InvalidInputError):
             fm.register_user(None)
+
+
+    def test_register_user_rejects_exact_duplicate_token(self):
+        fm = FleetManager(stations={}, vehicles={})
+
+        fm.register_user("tok_test")
+
+        with pytest.raises(ConflictError):
+            fm.register_user("tok_test")
+
+
+    def test_register_user_rejects_whitespace_variant_duplicate(self):
+        fm = FleetManager(stations={}, vehicles={})
+
+        fm.register_user("tok")
+
+        with pytest.raises(ConflictError):
+            fm.register_user(" tok ")
+
+
+    def test_register_user_stores_normalized_token(self):
+        fm = FleetManager(stations={}, vehicles={})
+
+        user_id = fm.register_user(" tok_test ")
+
+        assert fm.users[user_id].payment_token == "tok_test"
 
     #-----------------------------
     # Nearest Station Tests

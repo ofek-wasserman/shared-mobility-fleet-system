@@ -1,6 +1,7 @@
 import math
 from typing import Optional
 
+from src.domain.exceptions import ConflictError, InvalidInputError
 from src.domain.user import User
 from src.domain.Vehicle import Vehicle
 from src.domain.VehicleContainer import DegradedRepo, Station
@@ -34,42 +35,42 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-        """Normalize loaded state after CSV bootstrap.
+    """Normalize loaded state after CSV bootstrap (Phase 1).
 
-        Assumption (Phase 1):
-        - CSV bootstrap must not contain active rides.
-        Therefore, active_ride_id must always be None at startup.
+    Assumptions:
+    - CSV bootstrap must not contain active rides.
+    - Stations are loaded empty (no vehicle inventory).
+    - Vehicles contain station_id.
 
-        Goal:
-        - Regular stations contain only eligible/rentable vehicles.
-        - Unrentable vehicles are moved to the Degraded Repository and removed from stations.
-        """
-        for vehicle_id, vehicle in self.vehicles.items():
-            # Phase 1 contract: no active rides at bootstrap
-            if vehicle.active_ride_id is not None:
-                raise ValueError(
-                    f"Invalid bootstrap state: vehicle {vehicle_id} "
-                    f"has active_ride_id={vehicle.active_ride_id}"
-                )
+    Goals:
+    - Build station inventories from vehicles.
+    - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
+    """
+    for vehicle_id, vehicle in self.vehicles.items():
+        # Phase 1 contract: no active rides at bootstrap
+        if getattr(vehicle, "active_ride_id", None) is not None:
+            raise InvalidInputError(
+                f"Invalid bootstrap state: vehicle {vehicle_id} has active_ride_id={vehicle.active_ride_id}"
+            )
 
-            # If eligible, it may remain in a regular station (no changes needed)
-            if vehicle.is_eligible():
-                continue
-
-            # Not eligible (and not in ride) -> must be unrentable, so move to degraded
+        # Not eligible -> move to degraded and detach from station
+        if not vehicle.is_eligible():
             self.degraded_repo.add_vehicle(vehicle_id)
             vehicle.mark_degraded()
-
-            # Remove from station inventory if assigned
-            if vehicle.station_id is None:
-                continue
-
-            station = self.stations.get(vehicle.station_id)
-            if station is not None:
-                station.remove_vehicle(vehicle_id)
-
-            # Degraded vehicles shouldn't be assigned to a station
             vehicle.station_id = None
+            continue
+
+        # Eligible -> must belong to a valid station
+        if vehicle.station_id is None:
+            raise InvalidInputError(f"Eligible vehicle {vehicle_id} has no station_id")
+
+        station = self.stations.get(vehicle.station_id)
+        if station is None:
+            raise InvalidInputError(
+                f"Vehicle {vehicle_id} references unknown station_id={vehicle.station_id}"
+            )
+
+        station.add_vehicle(vehicle_id)
 
     #-----------------------------
     # Public API
@@ -77,26 +78,23 @@ class FleetManager:
     def register_user(self, payment_token: str) -> int:
         """
         Registers a new user and generates a unique user_id.
-        Args:
-            payment_token (str): The payment token for the user.
-        Returns:
-            int: The newly created user_id.
         Raises:
-            ValueError: If the payment token is invalid or already exists.
+            InvalidInputError: If the payment token is invalid.
+            ConflictError: If the payment token already exists.
         """
         if not isinstance(payment_token, str):
-            raise ValueError("Invalid payment token provided.")
+            raise InvalidInputError("Invalid payment token provided.")
 
         token = payment_token.strip()
         if not token:
-            raise ValueError("Invalid payment token provided.")
+            raise InvalidInputError("Payment token must be non-empty.")
 
         if token in self._registered_tokens:
-            raise ValueError("Payment token already registered.")
+            raise ConflictError("Payment token already registered.")
 
         new_user_id = max(self.users.keys(), default=0) + 1
         new_user = User(user_id=new_user_id, payment_token=token)
-        # Update both data structures to maintain state consistency
+
         self.users[new_user_id] = new_user
         self._registered_tokens.add(token)
         return new_user_id
@@ -151,7 +149,7 @@ class FleetManager:
             Station: The nearest station with an available vehicle.
         """
         if not isinstance(location, tuple) or len(location) != 2:
-            raise ValueError("Invalid location format. Expected Tuple[float, float].")
+            raise InvalidInputError("Invalid location format. Expected Tuple[float, float].")
 
         valid_stations = [station for station in self.stations.values() if
                           station.has_available_vehicle()]
@@ -178,14 +176,13 @@ class FleetManager:
             float: The distance between the two locations.
         """
         if not isinstance(loc1, tuple) or not isinstance(loc2, tuple):
-                raise TypeError("Coordinates must be strictly of type Tuple[float, float].")
+            raise InvalidInputError("Coordinates must be strictly of type Tuple[float, float].")
 
         if len(loc1) != 2 or len(loc2) != 2:
-            raise ValueError("Coordinates must contain exactly two dimensions (x, y).")
+            raise InvalidInputError("Coordinates must contain exactly two dimensions (x, y).")
 
-        # Prevent NaN propagation which breaks the deterministic min() function downstream
         if math.isnan(loc1[0]) or math.isnan(loc1[1]) or math.isnan(loc2[0]) or math.isnan(loc2[1]):
-            raise ValueError("Coordinates cannot contain NaN values.")
+            raise InvalidInputError("Coordinates cannot contain NaN values.")
 
         return math.dist(loc1, loc2)
 
