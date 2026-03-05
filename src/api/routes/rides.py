@@ -29,6 +29,7 @@ from src.services.fleet_manager import FleetManager
 router = APIRouter()
 
 
+
 @router.post("/ride/start", response_model=StartRideResponse, status_code=status.HTTP_200_OK)
 async def start_ride(
     req: StartRideRequest,
@@ -39,10 +40,13 @@ async def start_ride(
         location=(req.lat, req.lon),
     )
 
+    vehicle = fleet_manager.vehicles[ride.vehicle_id]
+    vehicle_type = type(vehicle).__name__
+
     return StartRideResponse(
         ride_id=ride.ride_id,
         vehicle_id=ride.vehicle_id,
-        vehicle_type=ride.vehicle_type,
+        vehicle_type=vehicle_type,
         start_station_id=start_station_id,
     )
 
