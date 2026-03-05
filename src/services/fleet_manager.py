@@ -35,32 +35,39 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-        """
-        Build a consistent runtime state from loaded CSV objects.
+        """Normalize loaded state after CSV bootstrap (Phase 1).
 
+        Assumptions:
+        - CSV bootstrap must not contain active rides.
         - Stations are loaded empty (no vehicle inventory).
         - Vehicles contain station_id.
-        - We create station inventories from vehicles, and immediately divert ineligible vehicles
-        (degraded / >10 rides) to the degraded repository.
 
-        Notes:
-        - If a vehicle references a station_id that doesn't exist in stations.csv, we fail fast.
-        - CSV should not include active rides.
+        Goals:
+        - Build station inventories from vehicles.
+        - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
         """
         for vehicle_id, vehicle in self.vehicles.items():
-            # Ineligible vehicles go straight to degraded repo (not docked at any station)
+            # Phase 1 contract: no active rides at bootstrap
+            if getattr(vehicle, "active_ride_id", None) is not None:
+                raise InvalidInputError(
+                    "Invalid bootstrap state: vehicle "
+                    f"{vehicle_id} has active_ride_id={vehicle.active_ride_id}"
+                )
+
+            # Not eligible -> move to degraded and detach from station
             if not vehicle.is_eligible():
                 self.degraded_repo.add_vehicle(vehicle_id)
                 vehicle.mark_degraded()
                 vehicle.station_id = None
                 continue
 
+            # Eligible -> must belong to a valid station
             if vehicle.station_id is None:
-                raise ValueError(f"Eligible vehicle {vehicle_id} has no station_id")
+                raise InvalidInputError(f"Eligible vehicle {vehicle_id} has no station_id")
 
             station = self.stations.get(vehicle.station_id)
             if station is None:
-                raise ValueError(
+                raise InvalidInputError(
                     f"Vehicle {vehicle_id} references unknown station_id={vehicle.station_id}"
                 )
 
