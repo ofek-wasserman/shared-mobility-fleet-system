@@ -3,6 +3,7 @@ import math
 from typing import Optional
 
 from src.domain.ride import Ride
+from src.domain.exceptions import ConflictError, InvalidInputError
 from src.domain.user import User
 from src.domain.Vehicle import Vehicle
 from src.domain.VehicleContainer import DegradedRepo, Station
@@ -36,32 +37,39 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-        """
-        Build a consistent runtime state from loaded CSV objects.
+        """Normalize loaded state after CSV bootstrap (Phase 1).
 
+        Assumptions:
+        - CSV bootstrap must not contain active rides.
         - Stations are loaded empty (no vehicle inventory).
         - Vehicles contain station_id.
-        - We create station inventories from vehicles, and immediately divert ineligible vehicles
-        (degraded / >10 rides) to the degraded repository.
 
-        Notes:
-        - If a vehicle references a station_id that doesn't exist in stations.csv, we fail fast.
-        - CSV should not include active rides.
+        Goals:
+        - Build station inventories from vehicles.
+        - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
         """
         for vehicle_id, vehicle in self.vehicles.items():
-            # Ineligible vehicles go straight to degraded repo (not docked at any station)
+            # Phase 1 contract: no active rides at bootstrap
+            if getattr(vehicle, "active_ride_id", None) is not None:
+                raise InvalidInputError(
+                    "Invalid bootstrap state: vehicle "
+                    f"{vehicle_id} has active_ride_id={vehicle.active_ride_id}"
+                )
+
+            # Not eligible -> move to degraded and detach from station
             if not vehicle.is_eligible():
                 self.degraded_repo.add_vehicle(vehicle_id)
                 vehicle.mark_degraded()
                 vehicle.station_id = None
                 continue
 
+            # Eligible -> must belong to a valid station
             if vehicle.station_id is None:
-                raise ValueError(f"Eligible vehicle {vehicle_id} has no station_id")
+                raise InvalidInputError(f"Eligible vehicle {vehicle_id} has no station_id")
 
             station = self.stations.get(vehicle.station_id)
             if station is None:
-                raise ValueError(
+                raise InvalidInputError(
                     f"Vehicle {vehicle_id} references unknown station_id={vehicle.station_id}"
                 )
 
@@ -73,24 +81,25 @@ class FleetManager:
     def register_user(self, payment_token: str) -> int:
         """
         Registers a new user and generates a unique user_id.
-        Args:
-            payment_token (str): The payment token for the user.
-        Returns:
-            int: The newly created user_id.
         Raises:
-            ValueError: If the payment token is invalid or already exists.
+            InvalidInputError: If the payment token is invalid.
+            ConflictError: If the payment token already exists.
         """
         if not isinstance(payment_token, str):
-            raise ValueError("Invalid payment token provided.")
+            raise InvalidInputError("Invalid payment token provided.")
 
-        if payment_token.strip() in self._registered_tokens:
-            raise ValueError("Payment token already registered.")
+        token = payment_token.strip()
+        if not token:
+            raise InvalidInputError("Payment token must be non-empty.")
+
+        if token in self._registered_tokens:
+            raise ConflictError("Payment token already registered.")
 
         new_user_id = max(self.users.keys(), default=0) + 1
-        new_user = User(user_id=new_user_id, payment_token=payment_token)
-        # Update both data structures to maintain state consistency
+        new_user = User(user_id=new_user_id, payment_token=token)
+
         self.users[new_user_id] = new_user
-        self._registered_tokens.add(payment_token.strip())
+        self._registered_tokens.add(token)
         return new_user_id
 
     def start_ride(self, user_id: int, location:tuple[float, float]) -> dict[str, any]:
@@ -133,6 +142,8 @@ class FleetManager:
 
         try:
             self.active_rides.add(ride)
+
+        ##fix error
         except ValueError as e:
             raise ValueError(f"Cannot start ride: {e}") from e
 
@@ -159,7 +170,7 @@ class FleetManager:
              - if ride_since_last_treated > threshold, move vehicle to degraded repo
              - return location of the station where the ride ended
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
 
     def nearest_station_with_available_vehicle(self,
                                                 location:tuple[float, float],
@@ -172,7 +183,7 @@ class FleetManager:
             Station: The nearest station with an available vehicle.
         """
         if not isinstance(location, tuple) or len(location) != 2:
-            raise ValueError("Invalid location format. Expected Tuple[float, float].")
+            raise InvalidInputError("Invalid location format. Expected Tuple[float, float].")
 
         valid_stations = [station for station in self.stations.values() if
                           station.has_available_vehicle()]
@@ -199,14 +210,13 @@ class FleetManager:
             float: The distance between the two locations.
         """
         if not isinstance(loc1, tuple) or not isinstance(loc2, tuple):
-                raise TypeError("Coordinates must be strictly of type Tuple[float, float].")
+            raise InvalidInputError("Coordinates must be strictly of type Tuple[float, float].")
 
         if len(loc1) != 2 or len(loc2) != 2:
-            raise ValueError("Coordinates must contain exactly two dimensions (x, y).")
+            raise InvalidInputError("Coordinates must contain exactly two dimensions (x, y).")
 
-        # Prevent NaN propagation which breaks the deterministic min() function downstream
         if math.isnan(loc1[0]) or math.isnan(loc1[1]) or math.isnan(loc2[0]) or math.isnan(loc2[1]):
-            raise ValueError("Coordinates cannot contain NaN values.")
+            raise InvalidInputError("Coordinates cannot contain NaN values.")
 
         return math.dist(loc1, loc2)
 
@@ -226,4 +236,8 @@ class FleetManager:
         Returns:
             Station: The nearest station with a free slot.
         """
-        NotImplementedError("KAN-21: Implement FleetManager Class")
+        raise NotImplementedError("KAN-21: Implement FleetManager Class")
+
+
+
+

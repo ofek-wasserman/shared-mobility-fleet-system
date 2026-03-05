@@ -2,6 +2,8 @@ from unittest.mock import Mock
 
 from starlette.testclient import TestClient
 
+from src.domain.exceptions import ConflictError
+
 
 def test_register_returns_200_and_user_id(client: TestClient, fleet_manager_mock: Mock) -> None:
     resp = client.post("/register", json={"payment_token": "tok_123"})
@@ -32,13 +34,13 @@ def test_register_missing_payment_token_returns_400(client: TestClient, fleet_ma
     fleet_manager_mock.register_user.assert_not_called()
 
 
-def test_register_duplicate_token_returns_400(client: TestClient, fleet_manager_mock: Mock) -> None:
-    fleet_manager_mock.register_user.side_effect = [1, ValueError("duplicate token")]
+def test_register_duplicate_token_returns_409(client: TestClient, fleet_manager_mock: Mock) -> None:
+    fleet_manager_mock.register_user.side_effect = [1, ConflictError("Payment token already registered.")]
     try:
         r1 = client.post("/register", json={"payment_token": "dup"})
         assert r1.status_code == 200
 
         r2 = client.post("/register", json={"payment_token": "dup"})
-        assert r2.status_code == 400
+        assert r2.status_code == 409
     finally:
         fleet_manager_mock.register_user.side_effect = None
