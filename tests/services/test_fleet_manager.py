@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.domain.exceptions import ConflictError, InvalidInputError
+from src.domain.exceptions import ConflictError, InvalidInputError, NotFoundError
 from src.domain.VehicleContainer import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
@@ -49,7 +49,6 @@ class TestFleetManager:
         vehicle.mark_degraded.assert_not_called()
         station.remove_vehicle.assert_not_called()
         station.add_vehicle.assert_called_once_with("V101")
-
 
     def test_initialize_state_ineligible_vehicle_moved_and_removed(self):
         station = MagicMock()
@@ -152,7 +151,6 @@ class TestFleetManager:
         assert fm.users[user_id].user_id == user_id
         assert fm.users[user_id].payment_token == "tok_test"
 
-
     def test_register_user_rejects_blank_token(self):
         fm = FleetManager(stations={}, vehicles={})
 
@@ -162,13 +160,11 @@ class TestFleetManager:
         with pytest.raises(InvalidInputError):
             fm.register_user("   ")
 
-
     def test_register_user_rejects_non_string_token(self):
         fm = FleetManager(stations={}, vehicles={})
 
         with pytest.raises(InvalidInputError):
             fm.register_user(None)
-
 
     def test_register_user_rejects_exact_duplicate_token(self):
         fm = FleetManager(stations={}, vehicles={})
@@ -178,7 +174,6 @@ class TestFleetManager:
         with pytest.raises(ConflictError):
             fm.register_user("tok_test")
 
-
     def test_register_user_rejects_whitespace_variant_duplicate(self):
         fm = FleetManager(stations={}, vehicles={})
 
@@ -186,7 +181,6 @@ class TestFleetManager:
 
         with pytest.raises(ConflictError):
             fm.register_user(" tok ")
-
 
     def test_register_user_stores_normalized_token(self):
         fm = FleetManager(stations={}, vehicles={})
@@ -231,7 +225,7 @@ class TestFleetManager:
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
         fm.users = {}
 
-        with pytest.raises(ValueError, match="User does not exist"):
+        with pytest.raises(NotFoundError, match="User does not exist"):
             fm.start_ride(user_id=1, location=(0.0, 0.0))
 
     def test_start_ride_user_already_has_active_ride_raises(self):
@@ -241,7 +235,7 @@ class TestFleetManager:
         # simulate active ride for user
         fm.active_rides.rides_by_user[1] = 999
 
-        with pytest.raises(ValueError, match="already has an active ride"):
+        with pytest.raises(ConflictError, match="already has an active ride"):
             fm.start_ride(user_id=1, location=(0.0, 0.0))
 
     def test_start_ride_no_station_available_returns_none_payload(self):
@@ -251,7 +245,7 @@ class TestFleetManager:
         fm.nearest_station_with_available_vehicle = MagicMock(return_value=None)
 
         result = fm.start_ride(user_id=1, location=(0.0, 0.0))
-        assert result == {"ride": None, "location": None}
+        assert result is None
 
     def test_start_ride_happy_path_registers_ride_and_mutates_station_vehicle(self, monkeypatch):
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
@@ -278,13 +272,12 @@ class TestFleetManager:
 
         # IMPORTANT: your implementation must generate ride_id before checkout_to_ride
         # If it's still after, this test will crash with UnboundLocalError.
-        result = fm.start_ride(user_id=1, location=(0.0, 0.0))
+        ride = fm.start_ride(user_id=1, location=(0.0, 0.0))
 
         station.remove_vehicle.assert_called_once_with(11)
         v11.checkout_to_ride.assert_called_once_with(ride_id=123)
         v10.checkout_to_ride.assert_not_called()
 
-        ride = result["ride"]
         assert ride.ride_id == 123
         assert ride.user_id == 1
         assert ride.vehicle_id == 11
@@ -295,7 +288,6 @@ class TestFleetManager:
         assert fm.active_rides.get(123) is ride
         assert fm.active_rides.has_active_ride_for_user(1) is True
 
-        assert result["location"] == (10.0, 20.0)
 
     def test_start_ride_when_registry_rejects_ride_raises_value_error(self):
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
@@ -319,5 +311,100 @@ class TestFleetManager:
         fm.active_rides.rides[999] = MagicMock()
         fm.active_rides.rides_by_user[123] = 999  # doesn't matter which user
 
-        with pytest.raises(ValueError, match="Cannot start ride:"):
+        with pytest.raises(ConflictError, match="Cannot start ride:"):
             fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+    def test_start_ride_deterministic_vehicle_selection_tie_breaks_by_smallest_id(self):
+        station = MagicMock()
+        station.container_id = 1
+        station.lat = 0.0
+        station.lon = 0.0
+        station.has_available_vehicle.return_value = True
+        station.get_vehicle_ids.return_value = {10, 11, 12}
+        station.remove_vehicle = MagicMock()
+        station.add_vehicle = MagicMock()  # needed for _initialize_state
+
+        # Vehicles (make them bootstrap-valid)
+        v10 = MagicMock(rides_since_last_treated=1)
+        v10.checkout_to_ride = MagicMock()
+        v10.is_eligible.return_value = True
+        v10.station_id = 1
+        v10.active_ride_id = None
+
+        v11 = MagicMock(rides_since_last_treated=1)
+        v11.checkout_to_ride = MagicMock()
+        v11.is_eligible.return_value = True
+        v11.station_id = 1
+        v11.active_ride_id = None
+
+        v12 = MagicMock(rides_since_last_treated=5)
+        v12.checkout_to_ride = MagicMock()
+        v12.is_eligible.return_value = True
+        v12.station_id = 1
+        v12.active_ride_id = None
+
+        vehicles = {10: v10, 11: v11, 12: v12}
+        stations = {1: station}
+
+        fm = FleetManager(stations=stations, vehicles=vehicles, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=station)
+        fm._generate_ride_id = MagicMock(return_value=99)
+
+        ride = fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+        assert ride is not None
+        assert ride.vehicle_id == 10  # tie-break by smallest id
+
+        station.remove_vehicle.assert_called_once_with(10)
+        v10.checkout_to_ride.assert_called_once_with(ride_id=99)
+        v11.checkout_to_ride.assert_not_called()
+        v12.checkout_to_ride.assert_not_called()
+
+    def test_start_ride_updates_station_inventory_removes_selected_vehicle_only(self):
+        inventory = {10, 11, 12}
+
+        station = MagicMock()
+        station.container_id = 1
+        station.lat = 0.0
+        station.lon = 0.0
+        station.has_available_vehicle.return_value = True
+        station.get_vehicle_ids.side_effect = lambda: set(inventory)
+        station.add_vehicle = MagicMock()  # needed for _initialize_state
+
+        def remove_vehicle(vid):
+            inventory.remove(vid)
+
+        station.remove_vehicle.side_effect = remove_vehicle
+
+        v10 = MagicMock(rides_since_last_treated=3)
+        v10.checkout_to_ride = MagicMock()
+        v10.is_eligible.return_value = True
+        v10.station_id = 1
+        v10.active_ride_id = None
+
+        v11 = MagicMock(rides_since_last_treated=0)
+        v11.checkout_to_ride = MagicMock()
+        v11.is_eligible.return_value = True
+        v11.station_id = 1
+        v11.active_ride_id = None
+
+        v12 = MagicMock(rides_since_last_treated=2)
+        v12.checkout_to_ride = MagicMock()
+        v12.is_eligible.return_value = True
+        v12.station_id = 1
+        v12.active_ride_id = None
+
+        vehicles = {10: v10, 11: v11, 12: v12}
+        stations = {1: station}
+
+        fm = FleetManager(stations=stations, vehicles=vehicles, active_rides=ActiveRidesRegistry())
+        fm.users = {1: MagicMock()}
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=station)
+        fm._generate_ride_id = MagicMock(return_value=100)
+
+        ride = fm.start_ride(user_id=1, location=(0.0, 0.0))
+
+        assert ride is not None
+        assert ride.vehicle_id == 11
+        assert inventory == {10, 12}

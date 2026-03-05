@@ -1,5 +1,6 @@
 from typing import Optional
 
+from src.domain.exceptions import ConflictError, NotFoundError
 from src.domain.ride import Ride
 
 
@@ -18,11 +19,11 @@ class ActiveRidesRegistry:
         returns: None
         """
         if ride.ride_id in self.rides:
-            raise ValueError(f"Ride ID {ride.ride_id} already exists in registry.")
+            raise ConflictError(f"Ride ID {ride.ride_id} already exists in registry.")
         if ride.user_id in self.rides_by_user:
-            raise ValueError(f"User ID {ride.user_id} already has an active ride.")
+            raise ConflictError(f"User ID {ride.user_id} already has an active ride.")
         if ride.vehicle_id in self.rides_by_vehicle:
-            raise ValueError(f"Vehicle ID {ride.vehicle_id} is already in an active ride.")
+            raise ConflictError(f"Vehicle ID {ride.vehicle_id} is already in an active ride.")
 
         self.rides[ride.ride_id] = ride
         self.rides_by_user[ride.user_id] = ride.ride_id
@@ -35,7 +36,7 @@ class ActiveRidesRegistry:
         returns: Ride: The removed ride.
         """
         if ride_id not in self.rides:
-            raise KeyError(f"Ride ID {ride_id} not found in registry.")
+            raise NotFoundError(f"Ride ID {ride_id} not found in registry.")
 
         ride = self.rides.pop(ride_id)
         self.rides_by_user.pop(ride.user_id, None)
@@ -49,7 +50,7 @@ class ActiveRidesRegistry:
         returns: Ride: The retrieved ride.
         """
         if ride_id not in self.rides:
-            raise KeyError(f"Ride ID {ride_id} not found in registry.")
+            raise NotFoundError(f"Ride ID {ride_id} not found in registry.")
         return self.rides[ride_id]
 
     def has_active_ride_for_user(self, user_id: int) -> bool:

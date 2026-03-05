@@ -4,6 +4,7 @@ import datetime
 
 import pytest
 
+from src.domain.exceptions import ConflictError, NotFoundError
 from src.domain.ride import Ride
 from src.services.active_rides import ActiveRidesRegistry
 
@@ -36,7 +37,7 @@ class TestActiveRidesRegistry:
         ride2 = Ride(ride_id=1, user_id=11, vehicle_id="V002", start_time=t, start_station_id=7)
 
         reg.add(ride1)
-        with pytest.raises(ValueError, match="Ride ID 1 already exists"):
+        with pytest.raises(ConflictError, match="Ride ID 1 already exists"):
             reg.add(ride2)
 
     def test_add_rejects_user_with_existing_active_ride(self):
@@ -47,7 +48,7 @@ class TestActiveRidesRegistry:
         ride2 = Ride(ride_id=2, user_id=10, vehicle_id="V002", start_time=t, start_station_id=7)
 
         reg.add(ride1)
-        with pytest.raises(ValueError, match="User ID 10 already has an active ride"):
+        with pytest.raises(ConflictError, match="User ID 10 already has an active ride"):
             reg.add(ride2)
 
     def test_add_rejects_vehicle_already_in_active_ride(self):
@@ -58,7 +59,7 @@ class TestActiveRidesRegistry:
         ride2 = Ride(ride_id=2, user_id=11, vehicle_id="V001", start_time=t, start_station_id=7)
 
         reg.add(ride1)
-        with pytest.raises(ValueError, match="Vehicle ID V001 is already in an active ride"):
+        with pytest.raises(ConflictError, match="Vehicle ID V001 is already in an active ride"):
             reg.add(ride2)
 
     def test_remove_deletes_ride_and_clears_indexes(self):
@@ -81,17 +82,17 @@ class TestActiveRidesRegistry:
         assert 10 not in reg.active_user_ids()
         assert 1 not in reg.active_ride_ids()
 
-        with pytest.raises(KeyError, match="Ride ID 1 not found"):
+        with pytest.raises(NotFoundError, match="Ride ID 1 not found"):
             reg.get(1)
 
     def test_get_missing_raises_key_error(self):
         reg = ActiveRidesRegistry()
-        with pytest.raises(KeyError, match="Ride ID 999 not found"):
+        with pytest.raises(NotFoundError, match="Ride ID 999 not found"):
             reg.get(999)
 
     def test_remove_missing_raises_key_error(self):
         reg = ActiveRidesRegistry()
-        with pytest.raises(KeyError, match="Ride ID 999 not found"):
+        with pytest.raises(NotFoundError, match="Ride ID 999 not found"):
             reg.remove(999)
 
     def test_get_active_ride_for_user_returns_none_when_missing(self):
