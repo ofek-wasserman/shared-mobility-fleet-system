@@ -102,7 +102,7 @@ class FleetManager:
         self._registered_tokens.add(token)
         return new_user_id
 
-    def start_ride(self, user_id: int, location:tuple[float, float]) -> Ride|None:
+    def start_ride(self, user_id: int, location:tuple[float, float]) -> tuple[Ride, int]:
         """
         Start a ride for a user with a specific vehicle.
         Args:
@@ -120,7 +120,7 @@ class FleetManager:
 
         nearest_station = self.nearest_station_with_available_vehicle(location)
         if nearest_station is None:
-            return None
+            raise ConflictError("No eligible vehicles")
 
         vehicle_ids = nearest_station.get_vehicle_ids()
         #determine which vehicle to assign (the least usage and smallest ID for tie-breaking)
@@ -148,7 +148,7 @@ class FleetManager:
         nearest_station.remove_vehicle(select_vehicle_id)
         self.vehicles[select_vehicle_id].checkout_to_ride(ride_id=ride_id)
 
-        return ride
+        return ride , ride.start_station_id
 
     def end_ride(self, ride_id: int, location:tuple[float, float]) -> dict[str, any]:
         """
