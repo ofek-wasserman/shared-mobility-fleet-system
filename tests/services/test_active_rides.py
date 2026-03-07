@@ -28,6 +28,8 @@ class TestActiveRidesRegistry:
         assert reg.get_active_ride_for_user(10) is ride
         assert 10 in reg.active_user_ids()
         assert 1 in reg.active_ride_ids()
+        assert isinstance(reg.active_user_ids(), set)
+        assert isinstance(reg.active_ride_ids(), set)
 
     def test_add_rejects_duplicate_ride_id(self):
         reg = ActiveRidesRegistry()
@@ -85,12 +87,12 @@ class TestActiveRidesRegistry:
         with pytest.raises(NotFoundError, match="Ride ID 1 not found"):
             reg.get(1)
 
-    def test_get_missing_raises_key_error(self):
+    def test_get_missing_raises_NotFoundError(self):
         reg = ActiveRidesRegistry()
         with pytest.raises(NotFoundError, match="Ride ID 999 not found"):
             reg.get(999)
 
-    def test_remove_missing_raises_key_error(self):
+    def test_remove_missing_raises_NotFoundError(self):
         reg = ActiveRidesRegistry()
         with pytest.raises(NotFoundError, match="Ride ID 999 not found"):
             reg.remove(999)

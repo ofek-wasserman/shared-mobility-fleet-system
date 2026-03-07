@@ -69,7 +69,7 @@ class ActiveRidesRegistry:
         ride_id = self.rides_by_user.get(user_id)
         if ride_id is None:
             return None
-        return self.rides[ride_id]
+        return self.rides.get(ride_id)
 
     def is_vehicle_in_ride(self, vehicle_id: str) -> bool:
         """
@@ -79,16 +79,16 @@ class ActiveRidesRegistry:
         """
         return vehicle_id in self.rides_by_vehicle
 
-    def active_user_ids(self) -> list[int]:
+    def active_user_ids(self) -> set[int]:
         """
-        Get a list of all active user IDs.
-        returns: list[int]: A list of all active user IDs.
+        Get a set of all active user IDs.
+        returns: set[int]: A list of all active user IDs.
         """
-        return list(self.rides_by_user.keys())
+        return set(self.rides_by_user.keys())
 
-    def active_ride_ids(self) -> list[int]:
+    def active_ride_ids(self) -> set[int]:
         """
-        Get a list of all active ride IDs.
-        returns: list[int]: A list of all active ride IDs.
+        Get a set of all active ride IDs.
+        returns: set[int]: A list of all active ride IDs.
         """
-        return list(self.rides.keys())
+        return set(self.rides.keys())
