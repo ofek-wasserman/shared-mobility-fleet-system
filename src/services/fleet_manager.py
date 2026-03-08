@@ -162,14 +162,12 @@ class FleetManager:
         """
         if not isinstance(location, tuple) or len(location) != 2:
             raise InvalidInputError("Invalid location format. Expected Tuple[float, float].")
-        try:
-            ride = self.active_rides.get(ride_id)
-        except Exception as e:
-            raise NotFoundError("Ride does not exist.") from e
+
+        ride: Ride = self.active_rides.get(ride_id)
 
         nearest_station = self._nearest_station_with_free_slot(location)
         if nearest_station is None:
-            raise NotFoundError("No free slots found in any station")
+            raise ConflictError("All destination station full")
 
         end_time= datetime.datetime.now()
 

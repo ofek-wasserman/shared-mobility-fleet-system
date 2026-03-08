@@ -405,12 +405,12 @@ class TestFleetManager:
     def test_end_ride_ride_not_found_raises(self):
         fm = FleetManager(stations={}, vehicles={})
         fm.active_rides = MagicMock()
-        fm.active_rides.get.side_effect = KeyError("missing")
+        fm.active_rides.get.side_effect = NotFoundError("Ride does not exist")
 
         with pytest.raises(NotFoundError, match="Ride does not exist"):
             fm.end_ride(ride_id=1, location=(0.0, 0.0))
 
-    def test_end_ride_no_free_slots_raises(self):
+    def test_end_ride_no_free_slots_raises_conflict(self):
         fm = FleetManager(stations={}, vehicles={})
         ride = MagicMock(user_id=1, vehicle_id="V10", start_time=datetime.datetime(2026, 1, 1, 10, 0))
         fm.active_rides = MagicMock()
@@ -418,7 +418,7 @@ class TestFleetManager:
 
         fm._nearest_station_with_free_slot = MagicMock(return_value=None)
 
-        with pytest.raises(NotFoundError, match="No free slots"):
+        with pytest.raises(ConflictError, match="All destination station full"):
             fm.end_ride(ride_id=1, location=(0.0, 0.0))
 
     def test_end_ride_user_missing_raises(self):
