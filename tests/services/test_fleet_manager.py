@@ -559,8 +559,8 @@ class TestFleetManager:
 
         assert station_id == 7
         assert price == 15.0
-    
-    
+
+
     #-----------------------------
     # Full Ride Lifecycle Tests
     #-----------------------------
@@ -575,19 +575,11 @@ class TestFleetManager:
 
         # For start_ride
         station.get_vehicle_ids.side_effect = lambda: set(inventory)
+        station.remove_vehicle.side_effect = lambda vid: inventory.remove(vid)
 
-        def remove_vehicle(vid):
-            inventory.remove(vid)
-
-        station.remove_vehicle.side_effect = remove_vehicle
-
-        # For end_ride
+        # For end_ride docking
+        station.add_vehicle.side_effect = lambda vid: inventory.add(vid)
         station.has_free_slot.return_value = True
-
-        def add_vehicle(vid):
-            inventory.add(vid)
-
-        station.add_vehicle.side_effect = add_vehicle
 
         # --- Setup vehicles ---
         v010 = MagicMock(vehicle_id="V010", rides_since_last_treated=0)
@@ -595,6 +587,8 @@ class TestFleetManager:
         v010.add_ride_count = MagicMock()
         v010.is_eligible.return_value = True
         v010.dock_to_station = MagicMock()
+        v010.move_to_repo = MagicMock()
+        v010.mark_degraded = MagicMock()
 
         # --- FleetManager (avoid bootstrap coupling) ---
         fm = FleetManager(stations={7: station}, vehicles={}, active_rides=ActiveRidesRegistry())
@@ -621,12 +615,16 @@ class TestFleetManager:
         fm.billing_service.calculate_price.return_value = 15.0
         fm.billing_service.process_payment.return_value = True
 
-        end_station_id, price = fm.end_ride(ride_id=123, location=(9.0, 9.0))
+        end_station_id, price = fm.end_ride(ride_id=ride.ride_id, location=(9.0, 9.0))
 
         assert end_station_id == 7
         assert price == 15.0
         assert "V010" in inventory  # returned to station
         assert fm.active_rides.has_active_ride_for_user(user_id) is False
+
+        # Vehicle docked back
+        v010.add_ride_count.assert_called_once()
+        v010.dock_to_station.assert_called_once_with(7)
 
     def test_initialize_state_does_not_add_ineligible_vehicle_to_station_inventory(self):
         station = MagicMock()
