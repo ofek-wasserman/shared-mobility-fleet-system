@@ -11,7 +11,7 @@ def test_register_user_returns_400_for_invalid_input(
 ) -> None:
     fleet_manager_mock.register_user.side_effect = InvalidInputError("Invalid payment token.")
 
-    resp = client.post("/users/register", json={"payment_token": ""})
+    resp = client.post("/register", json={"payment_token": ""})
 
     assert resp.status_code == 400
     assert resp.json() == {"detail": "Invalid payment token."}
@@ -25,7 +25,7 @@ def test_register_user_returns_409_for_conflict(
         "Payment token already registered."
     )
 
-    resp = client.post("/users/register", json={"payment_token": "tok_123"})
+    resp = client.post("/register", json={"payment_token": "tok_123"})
 
     assert resp.status_code == 409
     assert resp.json() == {"detail": "Payment token already registered."}
