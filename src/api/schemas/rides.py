@@ -23,7 +23,7 @@ class EndRideRequest(StrictBaseModel):
 class EndRideResponse(StrictBaseModel):
     ride_id: int
     end_station_id: int
-    payment_charged: int  # rename from payment_charged_ils
+    payment_charged: float  # rename from payment_charged_ils
 
 
 class ActiveUsersResponse(StrictBaseModel):
