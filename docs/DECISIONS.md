@@ -105,7 +105,7 @@ duplicated in state.json. It is always re-read from CSV on startup.
 | Field              | Type              | Description                                                      |
 |--------------------|-------------------|------------------------------------------------------------------|
 | schema_version     | int               | Schema version, starts at 1. Increment on breaking changes.      |
-| saved_at           | string (ISO 8601) | UTC timestamp of last save. For debugging only.                  |
+| saved_at           | string (ISO 8601) | Naive local datetime of last save (YYYY-MM-DDTHH:MM:SS). For debugging only. |
 | next_user_id       | int               | Next user_id to assign. Prevents collision across restarts.      |
 | next_ride_id       | int               | Next ride_id to assign. Counts all rides, not just active.       |
 | users              | object            | Map of user_id (string) → user object.                          |
@@ -173,7 +173,7 @@ duplicated in state.json. It is always re-read from CSV on startup.
 
 **Datetime values** (start_time, end_time, saved_at):
 - ISO 8601 format: `YYYY-MM-DDTHH:MM:SS`
-- Naive (no timezone suffix), consistent with `datetime.now()`
+- Naive local datetime (no timezone suffix), produced by `datetime.now()`
 
 **Date values** (last_treated_date):
 - ISO 8601 format: `YYYY-MM-DD`
@@ -200,14 +200,17 @@ On startup, if `state.json` exists:
 2. Apply `vehicles` overrides — overwrite mutable fields for each vehicle_id
 3. Restore `users` dict and `_registered_tokens` set
 4. Restore `ActiveRidesRegistry` from `active_rides`
-5. Restore completed rides history from `completed_rides`
-6. Restore `DegradedRepo` from `degraded_repo`
-7. Set ID counters to `next_user_id` and `next_ride_id`
+5. Rebuild `vehicle.active_ride_id` for each vehicle referenced in `active_rides` (this field is not stored in `vehicles` and must be derived)
+6. Restore completed rides history from `completed_rides`
+7. Restore `DegradedRepo` from `degraded_repo`
+8. Rebuild station inventories: for each vehicle whose `station_id` is non-null in `vehicles`, add it to that station's inventory. Vehicles in active rides or in the degraded repo must not appear in any station inventory.
+9. Set ID counters to `next_user_id` and `next_ride_id`
 
 If `state.json` does not exist, fall back to Phase 1 CSV-only bootstrap.
 
 ### Invariants that must hold after restore
 
+- Each vehicle exists in exactly one runtime location: a regular station inventory, the Active Rides registry, or the Degraded Repository
 - Every vehicle_id in `active_rides` must have `station_id: null` in `vehicles`
 - Every vehicle_id in `degraded_repo` must not appear in any station inventory
 - All vehicle_ids referenced must exist in the vehicles CSV
