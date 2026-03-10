@@ -29,7 +29,7 @@ class Ride:
     end_time: Optional[datetime] = None
     end_station_id: Optional[int] = None
     reported_degraded: bool = False
-    price: Optional[int] = None
+    price: Optional[float] = None
 
     def __post_init__(self) -> None:
         if self.ride_id <= 0:
