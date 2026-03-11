@@ -2,6 +2,7 @@ import datetime
 import math
 from typing import Optional
 
+from src.domain.enums import VehicleStatus
 from src.domain.exceptions import ConflictError, InvalidInputError, NotFoundError
 from src.domain.ride import Ride
 from src.domain.user import User
@@ -199,7 +200,8 @@ class FleetManager:
             #if not eligible then move to degraded repo
             self.degraded_repo.add_vehicle(vehicle_id=vehicle.vehicle_id)
             vehicle.move_to_repo()
-            vehicle.mark_degraded()
+            if vehicle.status != VehicleStatus.DEGRADED:
+                vehicle.mark_degraded()
             return self.degraded_repo.container_id, price
 
         # eligible -> dock
