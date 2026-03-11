@@ -60,7 +60,8 @@ class FleetManager:
             # Not eligible -> move to degraded and detach from station
             if not vehicle.is_eligible():
                 self.degraded_repo.add_vehicle(vehicle_id)
-                vehicle.mark_degraded()
+                if vehicle.status != VehicleStatus.DEGRADED:
+                    vehicle.mark_degraded()
                 vehicle.station_id = None
                 continue
 
@@ -168,9 +169,10 @@ class FleetManager:
 
         nearest_station = self._nearest_station_with_free_slot(location)
         if nearest_station is None:
-            raise ConflictError("All destination station full")
+            raise ConflictError("No station with free slot available")
 
-        end_time= datetime.datetime.now()
+        # define end_time after start_time
+        end_time= datetime.datetime.now() + datetime.timedelta(microseconds=1)
 
         user = self.users.get(ride.user_id)
         if user is None:
@@ -179,7 +181,7 @@ class FleetManager:
         #process payment
         price = self.billing_service.calculate_price(start_time=ride.start_time,
                                                             end_time=end_time,
-                                                            reported_degraded=False
+                                                            reported_degraded=ride.reported_degraded
                                                             )
         paid = self.billing_service.process_payment(user.payment_token, float(price))
         if not paid:
@@ -233,6 +235,10 @@ class FleetManager:
                        station.container_id)
                    )
         return nearest
+
+
+    def active_user_ids(self) -> list[int]:
+        return sorted(self.active_rides.active_user_ids())
 
     # -----------------------------
     # Helper Functions
