@@ -511,7 +511,7 @@ class TestFleetManager:
         assert station_id == 7
         assert price == 15.0
 
-    def test_end_ride_ineligible_vehicle_moves_to_degraded_and_still_docks(self):
+    def test_end_ride_ineligible_vehicle_moves_to_degraded_and_not_docked(self):
         fm = FleetManager(stations={}, vehicles={})
 
         ride = MagicMock(
@@ -537,6 +537,7 @@ class TestFleetManager:
         fm.billing_service.process_payment.return_value = True
 
         fm.degraded_repo = MagicMock()
+        fm.degraded_repo.container_id = -1
         fm.degraded_repo.add_vehicle = MagicMock()
 
         vehicle = MagicMock(vehicle_id="V010")
@@ -554,10 +555,11 @@ class TestFleetManager:
         vehicle.move_to_repo.assert_called_once()
         vehicle.mark_degraded.assert_called_once()
 
-        station.add_vehicle.assert_called_once_with("V010")
-        vehicle.dock_to_station.assert_called_once_with(7)
+        # NEW invariant: ineligible vehicle is not docked to station
+        station.add_vehicle.assert_not_called()
+        vehicle.dock_to_station.assert_not_called()
 
-        assert station_id == 7
+        assert station_id == fm.degraded_repo.container_id
         assert price == 15.0
 
 

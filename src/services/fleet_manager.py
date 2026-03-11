@@ -190,7 +190,7 @@ class FleetManager:
         self.active_rides.remove(ride_id)
 
         #process vehicle end ride
-        vehicle = self.vehicles[ride.vehicle_id]
+        vehicle = self.vehicles.get(ride.vehicle_id)
         if vehicle is None:
             raise NotFoundError("Vehicle for this ride does not exist.")
 
@@ -200,8 +200,9 @@ class FleetManager:
             self.degraded_repo.add_vehicle(vehicle_id=vehicle.vehicle_id)
             vehicle.move_to_repo()
             vehicle.mark_degraded()
+            return self.degraded_repo.container_id, price
 
-        # doc to station
+        # eligible -> dock
         nearest_station.add_vehicle(vehicle.vehicle_id)
         vehicle.dock_to_station(nearest_station.container_id)
         return nearest_station.container_id, price
