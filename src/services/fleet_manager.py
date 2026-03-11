@@ -253,28 +253,28 @@ class FleetManager:
             raise NotFoundError("Vehicle does not exist.")
         if not self.active_rides.is_vehicle_in_ride(vehicle_id):
             raise ConflictError("Vehicle is not in an active ride.")
-        
+
         ride = self.active_rides.get_active_ride_for_user(user_id)
         if ride is None:
             raise ConflictError("User does not have an active ride.")
         if vehicle_id != ride.vehicle_id:
             raise ConflictError("Vehicle not in user active ride.")
-        
+
         # degraded
         ride.report_degraded()
         ride.price = 0
 
         self.active_rides.remove(ride.ride_id)
-        
+
         vehicles = self.vehicles.get(vehicle_id)
         vehicles.move_to_repo()
         vehicles.mark_degraded()
         self.degraded_repo.add_vehicle(vehicle_id)
-        
 
-        
 
-        
+
+
+
 
     # -----------------------------
     # Helper Functions
