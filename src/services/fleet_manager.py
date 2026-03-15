@@ -279,6 +279,7 @@ class FleetManager:
             treated.append(vehicle_id)
 
         return treated
+
     def report_degraded(self,vehicle_id:str, user_id:int) -> None:
         """
         Report a vehicle as degraded.
@@ -312,14 +313,13 @@ class FleetManager:
         vehicle.mark_degraded()
         self.degraded_repo.add_vehicle(vehicle_id)
 
-
-
-
-
-
     # -----------------------------
     # Helper Functions
     # -----------------------------
+    @property
+    def next_ride_id(self) -> int:
+        return self._next_ride_id
+
     def _distance(self, loc1:tuple[float, float], loc2:tuple[float, float]) -> float:
         """
         Calculate the distance between two locations.
@@ -374,7 +374,5 @@ class FleetManager:
                        station.container_id)
                    )
         return nearest
-
-
 
 
