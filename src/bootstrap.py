@@ -11,10 +11,10 @@ def build_fleet_manager(
     state_path: Path = Path("data/state.json"),
 ) -> FleetManager:
     """
-    Build and return a FleetManager instance using data loaded from CSV files:
-    - Load stations and vehicles using the Data layer loaders
-    - Initialize the FleetManager with those objects
-    - Fail fast if CSV files are missing or invalid
+    Build and return a FleetManager from CSV base data and optional persisted state:
+    - Load stations and vehicles from CSV
+    - Initialize a normal FleetManager from the CSV-loaded base data
+    - Apply persisted runtime state from state_path when the snapshot exists
 
     Notes:
     - FleetManager initialization is responsible for linking vehicles to stations
@@ -23,9 +23,9 @@ def build_fleet_manager(
     try:
         stations = StationDataLoader(stations_csv).create_objects()
         vehicles = VehicleDataLoader(vehicles_csv).create_objects()
-        fleet_manager = FleetManager(stations=stations, vehicles=vehicles)
-        load_state(fleet_manager, state_path)
-        return fleet_manager
-
-    except Exception as e:
+    except (FileNotFoundError, ValueError) as e:
         raise RuntimeError(f"Bootstrap failed: {e}") from e
+
+    fleet_manager = FleetManager(stations=stations, vehicles=vehicles)
+    load_state(fleet_manager, state_path)
+    return fleet_manager

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import json
+
 import pytest
 
 from src.bootstrap import build_fleet_manager
@@ -87,3 +89,15 @@ def test_bootstrap_applies_persisted_state_on_restart(tmp_path: Path) -> None:
     assert new_user_id > user2
     next_ride, _ = restarted.start_ride(user_id=user2, location=start_location)
     assert next_ride.ride_id > active_ride.ride_id
+
+
+def test_bootstrap_propagates_state_restore_errors(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    state_path.write_text(json.dumps({"schema_version": 999}), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Unsupported state schema_version"):
+        build_fleet_manager(
+            stations_csv=Path("data/stations.csv"),
+            vehicles_csv=Path("data/vehicles.csv"),
+            state_path=state_path,
+        )

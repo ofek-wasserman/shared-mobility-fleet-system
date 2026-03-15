@@ -67,31 +67,14 @@ def _build_state(fm: FleetManager) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "saved_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-        "next_user_id": _resolve_next_user_id(fm),
-        "next_ride_id": _resolve_next_ride_id(fm),
+        "next_user_id": fm.next_user_id,
+        "next_ride_id": fm.next_ride_id,
         "users": _serialize_users(fm),
         "active_rides": _serialize_active_rides(fm),
         "completed_rides": _serialize_completed_rides(fm),
         "vehicles": _serialize_vehicles(fm),
         "degraded_repo": sorted(fm.degraded_repo.get_vehicle_ids()),
     }
-
-
-def _resolve_next_user_id(fm: FleetManager) -> int:
-    fallback = max(fm.users.keys(), default=0) + 1
-    try:
-        return max(fm.next_user_id, fallback)
-    except AttributeError:
-        return fallback
-
-
-def _resolve_next_ride_id(fm: FleetManager) -> int:
-    all_ride_ids = list(fm.active_rides.rides.keys()) + list(fm.completed_rides.keys())
-    fallback = max(all_ride_ids, default=0) + 1
-    try:
-        return max(fm.next_ride_id, fallback)
-    except AttributeError:
-        return fallback
 
 
 def _serialize_users(fm: FleetManager) -> dict:
@@ -256,7 +239,7 @@ def _restore_degraded_repo(fm: FleetManager, degraded_repo_state: list[str]) -> 
 
 def _rebuild_station_inventories(fm: FleetManager) -> None:
     for station in fm.stations.values():
-        station.get_vehicle_ids().clear()
+        station.clear_vehicles()
 
     active_vehicle_ids = {ride.vehicle_id for ride in fm.active_rides.rides.values()}
     degraded_vehicle_ids = set(fm.degraded_repo.get_vehicle_ids())

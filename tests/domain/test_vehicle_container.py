@@ -80,6 +80,15 @@ def test_get_vehicle_ids_returns_internal_set(container_with_vehicle):
     assert ids == {"V1", "V2"}
 
 
+def test_clear_vehicles_removes_all_ids(container_with_vehicle):
+    container_with_vehicle.add_vehicle("V2")
+
+    container_with_vehicle.clear_vehicles()
+
+    assert container_with_vehicle.get_vehicle_ids() == set()
+    assert container_with_vehicle.count() == 0
+
+
 def test_count_returns_correct_number(container_with_vehicle):
     container_with_vehicle.add_vehicle("V2")
     container_with_vehicle.add_vehicle("V3")
