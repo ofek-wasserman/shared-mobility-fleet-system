@@ -208,6 +208,35 @@ class TestFleetManager:
 
         assert fm.users[user_id].payment_token == "tok_test"
 
+    def test_register_user_ids_are_monotonic_and_not_reused(self):
+        fm = FleetManager(stations={}, vehicles={})
+
+        id1 = fm.register_user("tok_1")
+        id2 = fm.register_user("tok_2")
+        id3 = fm.register_user("tok_3")
+
+        assert id1 == 1
+        assert id2 == 2
+        assert id3 == 3
+        assert len({id1, id2, id3}) == 3
+
+        # users stored correctly
+        assert fm.users[id1].payment_token == "tok_1"
+        assert fm.users[id2].payment_token == "tok_2"
+        assert fm.users[id3].payment_token == "tok_3"
+
+    def test_register_user_id_not_consumed_on_duplicate_token(self):
+        fm = FleetManager(stations={}, vehicles={})
+
+        id1 = fm.register_user("tok_1")
+
+        with pytest.raises(ConflictError):
+            fm.register_user("tok_1")  # duplicate
+
+        id2 = fm.register_user("tok_2")
+
+        assert id1 == 1
+        assert id2 == 2
     #-----------------------------
     # Nearest Station Tests
     #-----------------------------
