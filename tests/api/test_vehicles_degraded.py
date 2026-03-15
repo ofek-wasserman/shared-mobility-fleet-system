@@ -9,7 +9,7 @@ def test_report_vehicle_degraded_returns_ok(
     client: TestClient,
     fleet_manager_mock: Mock,
 ) -> None:
-    fleet_manager_mock.report_vehicle_degraded.return_value = None
+    fleet_manager_mock.report_degraded.return_value = None
 
     resp = client.post(
         "/vehicle/report-degraded",
@@ -36,7 +36,7 @@ def test_report_vehicle_degraded_missing_entity_returns_404(
     client: TestClient,
     fleet_manager_mock: Mock,
 ) -> None:
-    fleet_manager_mock.report_vehicle_degraded.side_effect = NotFoundError("Vehicle not found")
+    fleet_manager_mock.report_degraded.side_effect = NotFoundError("Vehicle not found")
 
     resp = client.post(
         "/vehicle/report-degraded",
@@ -51,7 +51,7 @@ def test_report_vehicle_degraded_conflicting_state_returns_409(
     client: TestClient,
     fleet_manager_mock: Mock,
 ) -> None:
-    fleet_manager_mock.report_vehicle_degraded.side_effect = ConflictError(
+    fleet_manager_mock.report_degraded.side_effect = ConflictError(
         "Vehicle already degraded"
     )
 

@@ -16,7 +16,7 @@ async def report_degraded(
     req: ReportDegradedRequest,
     fleet_manager: FleetManager = Depends(get_fleet_manager),
 ) -> ReportDegradedResponse:
-    fleet_manager.report_vehicle_degraded(
+    fleet_manager.report_degraded(
         user_id=req.user_id,
         vehicle_id=req.vehicle_id,
     )
