@@ -25,6 +25,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.state.state_path = Path("state.json")
+
     app.include_router(api_router)
     register_exception_handlers(app)
     return app

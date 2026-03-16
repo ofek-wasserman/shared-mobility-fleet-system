@@ -24,7 +24,7 @@ Error mapping (via global exception handlers):
 
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
 from src.api.dependencies import get_fleet_manager
 from src.api.schemas.rides import (
@@ -34,6 +34,7 @@ from src.api.schemas.rides import (
     StartRideRequest,
     StartRideResponse,
 )
+from src.data.state_serializer import save_state
 from src.services.fleet_manager import FleetManager
 
 router = APIRouter()
@@ -42,12 +43,14 @@ router = APIRouter()
 @router.post("/ride/start", response_model=StartRideResponse, status_code=status.HTTP_200_OK)
 async def start_ride(
     req: StartRideRequest,
+    request: Request,
     fleet_manager: FleetManager = Depends(get_fleet_manager),
 ) -> StartRideResponse:
     ride, start_station_id = fleet_manager.start_ride(
         user_id=req.user_id,
         location=(req.lat, req.lon),
     )
+    save_state(fleet_manager, request.app.state.state_path)
 
     vehicle = fleet_manager.vehicles[ride.vehicle_id]
     vehicle_type = type(vehicle).__name__
@@ -63,12 +66,14 @@ async def start_ride(
 @router.post("/ride/end", response_model=EndRideResponse, status_code=status.HTTP_200_OK)
 async def end_ride(
     req: EndRideRequest,
+    request: Request,
     fleet_manager: FleetManager = Depends(get_fleet_manager),
 ) -> EndRideResponse:
     end_station_id, payment_charged = fleet_manager.end_ride(
         ride_id=req.ride_id,
         location=(req.lat, req.lon),
     )
+    save_state(fleet_manager, request.app.state.state_path)
 
     return EndRideResponse(
         ride_id=req.ride_id,
