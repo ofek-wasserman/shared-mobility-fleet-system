@@ -72,6 +72,7 @@ def test_active_users_e2e(tmp_path: Path) -> None:
         assert isinstance(before_resp.json()["active_user_ids"], list)
 
         register_resp = client.post("/register", json={"payment_token": "token_e2e_3"})
+        assert register_resp.status_code == 201
         user_id = register_resp.json()["user_id"]
 
         start_resp = client.post(
@@ -90,6 +91,7 @@ def test_report_vehicle_degraded_e2e(tmp_path: Path) -> None:
         client.app.state.state_path = tmp_path / "state.json"
 
         register_resp = client.post("/register", json={"payment_token": "token_e2e_4"})
+        assert register_resp.status_code == 201
         user_id = register_resp.json()["user_id"]
 
         start_resp = client.post(
