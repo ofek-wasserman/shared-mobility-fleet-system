@@ -70,6 +70,12 @@ class VehicleContainer:
         """
         return self._vehicle_ids
 
+    def clear_vehicles(self) -> None:
+        """
+        Remove all vehicle IDs from the container.
+        """
+        self._vehicle_ids.clear()
+
     def count(self) -> int:
         """
         Return number of vehicles currently in the container.

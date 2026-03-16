@@ -327,6 +327,20 @@ class FleetManager:
     def next_ride_id(self) -> int:
         return self._next_ride_id
 
+    def configure_id_counters(self, next_user_id: int, next_ride_id: int) -> None:
+        if next_user_id <= max(self.users.keys(), default=0):
+            raise InvalidInputError("next_user_id must be greater than all existing user IDs")
+
+        max_known_ride_id = max(
+            list(self.active_rides.rides.keys()) + list(self.completed_rides.keys()),
+            default=0,
+        )
+        if next_ride_id <= max_known_ride_id:
+            raise InvalidInputError("next_ride_id must be greater than all existing ride IDs")
+
+        self._next_user_id = next_user_id
+        self._next_ride_id = next_ride_id
+
     def _distance(self, loc1:tuple[float, float], loc2:tuple[float, float]) -> float:
         """
         Calculate the distance between two locations.

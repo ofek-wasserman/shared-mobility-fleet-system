@@ -202,7 +202,7 @@ class TestCounters:
         assert data["next_ride_id"] == 1
 
     def test_next_ride_id_exceeds_max_ride_id(self, tmp_path: Path):
-        """Inject a completed ride directly and verify next_ride_id = max + 1."""
+        """Persist the configured next_ride_id after completed rides exist."""
         fm = _minimal_fleet_manager()
         ride = Ride(
             ride_id=5,
@@ -215,6 +215,7 @@ class TestCounters:
             price=15.0,
         )
         fm.completed_rides[5] = ride
+        fm.configure_id_counters(next_user_id=fm.next_user_id, next_ride_id=6)
         out = tmp_path / "state.json"
         save_state(fm, out)
         data = json.loads(out.read_text())
@@ -421,6 +422,8 @@ class TestVehiclesSerialisation:
         fm.active_rides = ActiveRidesRegistry()
         fm.completed_rides = {}
         fm.degraded_repo = DegradedRepo(container_id=-1, _vehicle_ids=set(), name="Degraded Repo")
+        fm._next_user_id = 1
+        fm._next_ride_id = 1
         out = tmp_path / "state.json"
         save_state(fm, out)
         data = json.loads(out.read_text())
