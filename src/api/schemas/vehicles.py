@@ -12,3 +12,12 @@ class ReportDegradedRequest(StrictBaseModel):
 
 class ReportDegradedResponse(StrictBaseModel):
     result: Literal["ok"]
+
+
+class TreatVehicleRequest(StrictBaseModel):
+    lat: float
+    lon: float
+
+
+class TreatVehicleResponse(StrictBaseModel):
+    treated_vehicle_ids: list[str]

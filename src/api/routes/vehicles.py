@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, status
 
 from src.api.dependencies import get_fleet_manager
-from src.api.schemas.vehicles import ReportDegradedRequest, ReportDegradedResponse
+from src.api.schemas.vehicles import (
+    ReportDegradedRequest,
+    ReportDegradedResponse,
+    TreatVehicleRequest,
+    TreatVehicleResponse,
+)
 from src.services.fleet_manager import FleetManager
 
 router = APIRouter()
@@ -21,3 +26,16 @@ async def report_degraded(
         vehicle_id=req.vehicle_id,
     )
     return ReportDegradedResponse(result="ok")
+
+
+@router.post(
+    "/vehicle/treat",
+    response_model=TreatVehicleResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def treat_vehicle(
+    req: TreatVehicleRequest,
+    fleet_manager: FleetManager = Depends(get_fleet_manager),
+) -> TreatVehicleResponse:
+    treated_vehicle_ids = fleet_manager.apply_treatment((req.lat, req.lon))
+    return TreatVehicleResponse(treated_vehicle_ids=treated_vehicle_ids)
