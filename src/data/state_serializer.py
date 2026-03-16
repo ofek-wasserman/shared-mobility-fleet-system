@@ -181,19 +181,24 @@ def _restore_users(fm: FleetManager, users_state: dict) -> None:
 def _restore_active_rides(fm: FleetManager, active_rides_state: dict) -> None:
     registry = ActiveRidesRegistry()
     for ride_data in active_rides_state.values():
+        user_id = int(ride_data["user_id"])
+        vehicle_id = str(ride_data["vehicle_id"])
+        if user_id not in fm.users:
+            raise ValueError(f"Unknown user referenced by active ride: {user_id}")
+
+        vehicle = fm.vehicles.get(vehicle_id)
+        if vehicle is None:
+            raise ValueError(f"Unknown vehicle referenced by active ride: {vehicle_id}")
+
         ride = Ride(
             ride_id=int(ride_data["ride_id"]),
-            user_id=int(ride_data["user_id"]),
-            vehicle_id=str(ride_data["vehicle_id"]),
+            user_id=user_id,
+            vehicle_id=vehicle_id,
             start_time=_parse_dt(ride_data["start_time"]),
             start_station_id=int(ride_data["start_station_id"]),
             reported_degraded=bool(ride_data.get("reported_degraded", False)),
         )
         registry.add(ride)
-
-        vehicle = fm.vehicles.get(ride.vehicle_id)
-        if vehicle is None:
-            raise ValueError(f"Unknown vehicle referenced by active ride: {ride.vehicle_id}")
 
         vehicle.active_ride_id = ride.ride_id
         vehicle.station_id = None
@@ -205,10 +210,18 @@ def _restore_active_rides(fm: FleetManager, active_rides_state: dict) -> None:
 def _restore_completed_rides(fm: FleetManager, completed_rides_state: list) -> None:
     fm.completed_rides = {}
     for ride_data in completed_rides_state:
+        user_id = int(ride_data["user_id"])
+        vehicle_id = str(ride_data["vehicle_id"])
+        if user_id not in fm.users:
+            raise ValueError(f"Unknown user referenced by completed ride: {user_id}")
+
+        if vehicle_id not in fm.vehicles:
+            raise ValueError(f"Unknown vehicle referenced by completed ride: {vehicle_id}")
+
         ride = Ride(
             ride_id=int(ride_data["ride_id"]),
-            user_id=int(ride_data["user_id"]),
-            vehicle_id=str(ride_data["vehicle_id"]),
+            user_id=user_id,
+            vehicle_id=vehicle_id,
             start_time=_parse_dt(ride_data["start_time"]),
             start_station_id=int(ride_data["start_station_id"]),
             end_time=_parse_dt(ride_data["end_time"]) if ride_data.get("end_time") else None,
