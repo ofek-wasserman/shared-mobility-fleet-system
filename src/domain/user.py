@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src.domain.exceptions import InvalidInputError
 
 
