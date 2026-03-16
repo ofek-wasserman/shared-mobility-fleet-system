@@ -33,9 +33,6 @@ class FleetManager:
 
         # helper data structure to track registered payment tokens for quick validation
         self._registered_tokens: set[str] = set()
-        self._next_user_id: int = 1
-
-        # initialize state
         self._next_ride_id = 1
         self._initialize_state()
         self._next_user_id = max(self.users.keys(), default=0) + 1
@@ -107,7 +104,8 @@ class FleetManager:
         if token in self._registered_tokens:
             raise ConflictError("Payment token already registered.")
 
-        new_user_id = self._generate_user_id()
+        new_user_id = self._next_user_id
+        self._next_user_id += 1
         new_user = User(user_id=new_user_id, payment_token=token)
 
         self.users[new_user_id] = new_user
@@ -377,17 +375,6 @@ class FleetManager:
         ride_id = self._next_ride_id
         self._next_ride_id += 1
         return ride_id
-
-    def _generate_user_id(self) -> int:
-        """
-        Generates a new unique user ID. In a real implementation, this could be more robust.
-        Returns:
-            int: The generated user ID.
-        """
-        user_id = self._next_user_id
-        self._next_user_id += 1
-        return user_id
-
 
     def _nearest_station_with_free_slot(self,
                                         location:tuple[float, float],
