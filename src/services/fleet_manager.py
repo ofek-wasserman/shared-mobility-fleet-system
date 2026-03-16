@@ -255,6 +255,7 @@ class FleetManager:
         Return:
                 vehicle IDs list of treated vehicles
         """
+        today = datetime.date.today()
         treated: list[str] = []
         degraded_ids = set(self.degraded_repo.get_vehicle_ids())
         non_degraded_ids = [vid for vid in self.vehicles.keys()
@@ -269,7 +270,7 @@ class FleetManager:
             degr_vehicle = self.vehicles.get(vehicle_id)
             if degr_vehicle is None:
                 raise NotFoundError(f"Vehicle {vehicle_id} not found.")
-            degr_vehicle.apply_treatment()
+            degr_vehicle.apply_treatment(today)
             self.degraded_repo.remove_vehicle(vehicle_id)
             nearest_station.add_vehicle(vehicle_id)
             degr_vehicle.dock_to_station(nearest_station.container_id)
@@ -278,7 +279,7 @@ class FleetManager:
         # for eligible vehicles that can have a treatment
         for vehicle_id in non_degraded_ids:
             vehicle = self.vehicles[vehicle_id]
-            vehicle.apply_treatment()
+            vehicle.apply_treatment(today)
             treated.append(vehicle_id)
 
         return treated

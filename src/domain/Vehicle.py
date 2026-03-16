@@ -105,7 +105,7 @@ class Vehicle(ABC):
             self.rides_since_last_treated = 0
             self.last_treated_date = today
         else:
-            raise Exception("Vehicle does not qualify for treatment.")
+            raise ConflictError("Vehicle does not qualify for treatment.")
 
     def add_ride_count(self) -> None:
         """

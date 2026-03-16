@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from src.domain.exceptions import InvalidInputError
 
 
 @dataclass
@@ -15,7 +16,7 @@ class User:
 
     def __post_init__(self) -> None:
         if self.user_id <= 0:
-            raise ValueError("user_id must be positive")
+            raise InvalidInputError("user_id must be positive")
 
         if not self.payment_token:
-            raise ValueError("payment_token must be non-empty")
+            raise InvalidInputError("payment_token must be non-empty")
