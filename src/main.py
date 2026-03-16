@@ -10,6 +10,7 @@ from src.bootstrap import build_fleet_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.state_path = Path("state.json")
     app.state.fleet_manager = build_fleet_manager(
         stations_csv=Path("data/stations.csv"),
         vehicles_csv=Path("data/vehicles.csv"),

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, status
+from httpx import request
 
 from src.api.dependencies import get_fleet_manager
 from src.api.schemas.users import RegisterRequest, RegisterResponse
+from src.data.state_serializer import save_state
 from src.services.fleet_manager import FleetManager
 
 router = APIRouter()
@@ -13,4 +15,5 @@ async def register_user(
     fleet_manager: FleetManager = Depends(get_fleet_manager),
 ) -> RegisterResponse:
     user_id = fleet_manager.register_user(req.payment_token)
+    save_state(fleet_manager, request.app.state.state_path)
     return RegisterResponse(user_id=user_id)
