@@ -2,13 +2,13 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from src.main import app
+from src.main import create_app
 
 
 def test_register_user_e2e(tmp_path: Path) -> None:
+    app = create_app()
+    app.state.state_path = tmp_path / "state.json"
     with TestClient(app) as client:
-        client.app.state.state_path = tmp_path / "state.json"
-
         resp = client.post("/register", json={"payment_token": "token_e2e_1"})
 
         assert resp.status_code == 201
@@ -17,9 +17,9 @@ def test_register_user_e2e(tmp_path: Path) -> None:
 
 
 def test_start_and_end_ride_e2e(tmp_path: Path) -> None:
+    app = create_app()
+    app.state.state_path = tmp_path / "state.json"
     with TestClient(app) as client:
-        client.app.state.state_path = tmp_path / "state.json"
-
         register_resp = client.post("/register", json={"payment_token": "token_e2e_2"})
         assert register_resp.status_code == 201
         user_id = register_resp.json()["user_id"]
@@ -51,9 +51,9 @@ def test_start_and_end_ride_e2e(tmp_path: Path) -> None:
 
 
 def test_nearest_station_e2e(tmp_path: Path) -> None:
+    app = create_app()
+    app.state.state_path = tmp_path / "state.json"
     with TestClient(app) as client:
-        client.app.state.state_path = tmp_path / "state.json"
-
         resp = client.get("/stations/nearest?lat=32.0853&lon=34.7818")
 
         assert resp.status_code == 200
@@ -64,9 +64,9 @@ def test_nearest_station_e2e(tmp_path: Path) -> None:
 
 
 def test_active_users_e2e(tmp_path: Path) -> None:
+    app = create_app()
+    app.state.state_path = tmp_path / "state.json"
     with TestClient(app) as client:
-        client.app.state.state_path = tmp_path / "state.json"
-
         before_resp = client.get("/rides/active-users")
         assert before_resp.status_code == 200
         assert isinstance(before_resp.json()["active_user_ids"], list)
@@ -136,9 +136,9 @@ def test_register_duplicate_token_returns_409_e2e(tmp_path: Path) -> None:
 
 
 def test_invalid_register_body_returns_400_e2e(tmp_path: Path) -> None:
+    app = create_app()
+    app.state.state_path = tmp_path / "state.json"
     with TestClient(app) as client:
-        client.app.state.state_path = tmp_path / "state.json"
-
         resp = client.post("/register", json={"payment_token": 123})
 
         assert resp.status_code == 400
