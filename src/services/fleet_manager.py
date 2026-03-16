@@ -43,7 +43,7 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-        """Normalize loaded state after CSV bootstrap (Phase 1).
+        """Normalize loaded state after CSV bootstrap.
 
         Assumptions:
         - CSV bootstrap must not contain active rides.
@@ -55,7 +55,7 @@ class FleetManager:
         - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
         """
         for vehicle_id, vehicle in self.vehicles.items():
-            # Phase 1 contract: no active rides at bootstrap
+            # Bootstrap contract: no active rides in loaded CSV state
             if getattr(vehicle, "active_ride_id", None) is not None:
                 raise InvalidInputError(
                     "Invalid bootstrap state: vehicle "

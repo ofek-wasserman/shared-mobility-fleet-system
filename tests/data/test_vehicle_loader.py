@@ -1,4 +1,4 @@
-"""Tests for KAN-31 Vehicle loader"""
+"""Tests for vehicle loader."""
 
 import csv
 from datetime import date

@@ -801,7 +801,7 @@ class TestFleetManager:
         assert ride2.ride_id == 2  # must not reuse 1
         assert ride2.ride_id != ride1.ride_id
     # -----------------------------
-    # apply_treatment tests (Phase 2 /vehicle/treat)
+    # apply_treatment tests (/vehicle/treat)
     # -----------------------------
 
     def test_apply_treatment_treats_only_threshold_eligible_vehicles(self):

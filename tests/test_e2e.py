@@ -4,9 +4,9 @@ from fastapi.testclient import TestClient
 from src.main import app
 
 
-def test_phase1_user_flow():
+def test_user_flow_end_to_end():
     """
-    Phase 1 end-to-end integration test.
+    End-to-end integration test.
 
     Flow:
     Register user → Start ride → End ride
