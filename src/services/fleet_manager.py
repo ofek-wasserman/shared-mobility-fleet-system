@@ -262,7 +262,7 @@ class FleetManager:
                             if vid not in degraded_ids
                             and self.vehicles[vid].can_initiate_treatment()]
 
-        # for degraded vehicles
+        # Treat degraded vehicles and dock them back to a station.
         for vehicle_id in degraded_ids:
             nearest_station = self._nearest_station_with_free_slot(location=treatment_location)
             if nearest_station is None:
@@ -276,7 +276,7 @@ class FleetManager:
             degr_vehicle.dock_to_station(nearest_station.container_id)
             treated.append(vehicle_id)
 
-        # for eligible vehicles that can have a treatment
+        # Treat non-degraded vehicles eligible for maintenance.
         for vehicle_id in non_degraded_ids:
             vehicle = self.vehicles[vehicle_id]
             vehicle.apply_treatment(today)

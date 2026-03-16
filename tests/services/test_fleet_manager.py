@@ -367,7 +367,7 @@ class TestFleetManager:
         station.lon = 0.0
         station.get_vehicle_ids.return_value = {"V010", "V011", "V012"}
         station.remove_vehicle = MagicMock()
-        station.add_vehicle = MagicMock()  # for _initialize_state if needed
+        station.add_vehicle = MagicMock()
 
         v010 = MagicMock(rides_since_last_treated=1, station_id=1, active_ride_id=None)
         v010.is_eligible.return_value = True
@@ -407,7 +407,7 @@ class TestFleetManager:
         station.lat = 0.0
         station.lon = 0.0
         station.get_vehicle_ids.side_effect = lambda: set(inventory)
-        station.add_vehicle = MagicMock()  # for _initialize_state if needed
+        station.add_vehicle = MagicMock()
 
         def remove_vehicle(vid):
             inventory.remove(vid)
@@ -661,9 +661,9 @@ class TestFleetManager:
 
 
 
-    #-----------------------------
-    # Full Ride Lifecycle Tests
-    #-----------------------------
+    # -----------------------------
+    # Full ride lifecycle tests
+    # -----------------------------
     def test_full_ride_lifecycle_register_start_end(self):
         # --- Setup station inventory with real mutation ---
         inventory = {"V010"}
