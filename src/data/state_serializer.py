@@ -1,8 +1,7 @@
-"""Phase 2 - Save runtime state to data/state.json.
+"""Save and restore FleetManager runtime state to and from `data/state.json`.
 
-No business logic here: this module only reads public attributes from
-FleetManager and writes them as JSON according to the schema defined in
-docs/DECISIONS.md (state.json Schema section).
+This module handles JSON serialization and restoration using the
+`state.json` schema documented in `docs/DECISIONS.md`.
 """
 
 from __future__ import annotations
