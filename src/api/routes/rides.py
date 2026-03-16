@@ -15,7 +15,7 @@ Endpoints:
         billing.
 
     GET /rides/active-users
-        Placeholder (not implemented in Phase 1 tests unless required).
+        Get a list of user IDs who currently have active rides.
 
 Error mapping (via global exception handlers):
     - InvalidInputError -> 400
