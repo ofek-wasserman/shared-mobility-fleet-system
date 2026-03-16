@@ -176,8 +176,10 @@ class FleetManager:
         if nearest_station is None:
             raise ConflictError("No station with free slot available")
 
-        # define end_time after start_time
-        end_time= datetime.datetime.now()
+        # Ensure end_time is strictly after start_time.
+        end_time = datetime.datetime.now()
+        if end_time <= ride.start_time:
+            end_time = ride.start_time + datetime.timedelta(microseconds=1)
 
         user = self.users.get(ride.user_id)
         if user is None:
