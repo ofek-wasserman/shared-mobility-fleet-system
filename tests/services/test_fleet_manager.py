@@ -280,8 +280,15 @@ class TestFleetManager:
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
         fm.users = {1: MagicMock()}
 
-        # simulate active ride for user
-        fm.active_rides.rides_by_user[1] = 999
+        # Use public registry API instead of touching rides_by_user directly
+        active_ride = MagicMock(
+            ride_id=999,
+            user_id=1,
+            vehicle_id="V010",
+            start_time=datetime.datetime(2026, 1, 1, 10, 0),
+            start_station_id=1,
+        )
+        fm.active_rides.add(active_ride)
 
         with pytest.raises(ConflictError, match="already has an active ride"):
             fm.start_ride(user_id=1, location=(0.0, 0.0))
@@ -655,7 +662,14 @@ class TestFleetManager:
     def test_active_user_ids_returns_sorted_active_users(self):
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
 
-        fm.active_rides.rides_by_user = {5: 100, 2: 101, 9: 102}
+        t = datetime.datetime(2026, 1, 1, 10, 0)
+        r1 = MagicMock(ride_id=100, user_id=5, vehicle_id="V005", start_time=t, start_station_id=1)
+        r2 = MagicMock(ride_id=101, user_id=2, vehicle_id="V002", start_time=t, start_station_id=1)
+        r3 = MagicMock(ride_id=102, user_id=9, vehicle_id="V009", start_time=t, start_station_id=1)
+
+        fm.active_rides.add(r1)
+        fm.active_rides.add(r2)
+        fm.active_rides.add(r3)
 
         assert fm.active_user_ids() == [2, 5, 9]
 
@@ -823,7 +837,9 @@ class TestFleetManager:
         treated = fm.apply_treatment(treatment_location=(0.0, 0.0))
 
         assert treated == ["V010"]
-        v1.apply_treatment.assert_called_once()
+
+        today = datetime.date.today()
+        v1.apply_treatment.assert_called_once_with(today)
         v2.apply_treatment.assert_not_called()
 
 
@@ -867,6 +883,8 @@ class TestFleetManager:
         assert calls[1] == ("station_add", "V999")
 
         v_deg.dock_to_station.assert_called_with(7)
+        today = datetime.date.today()
+        v_deg.apply_treatment.assert_called_with(today)
 
 
     def test_apply_treatment_degraded_vehicle_no_station_free_slot_raises_conflict(self):
@@ -952,7 +970,8 @@ class TestFleetManager:
         treated = fm.apply_treatment(treatment_location=(0.0, 0.0))
 
         assert treated.count("V999") == 1
-        v999.apply_treatment.assert_called_once()
+        today = datetime.date.today()
+        v999.apply_treatment.assert_called_once_with(today)
 
 
     # -----------------------------
@@ -1121,3 +1140,6 @@ class TestFleetManager:
         assert "V010" not in repo_ids
         assert "V010" in station_inventory
         vehicle.dock_to_station.assert_called_with(7)
+
+        today = datetime.date.today()
+        vehicle.apply_treatment.assert_called_with(today)
