@@ -6,8 +6,8 @@ from src.domain.enums import VehicleStatus
 from src.domain.exceptions import ConflictError, InvalidInputError, NotFoundError
 from src.domain.ride import Ride
 from src.domain.user import User
-from src.domain.Vehicle import Vehicle
-from src.domain.VehicleContainer import DegradedRepo, Station
+from src.domain.vehicle import Vehicle
+from src.domain.vehicle_container import DegradedRepo, Station
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
 

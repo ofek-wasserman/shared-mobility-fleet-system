@@ -8,7 +8,7 @@ import pytest
 
 from src.data.loaders import VehicleDataLoader
 from src.domain.enums import VehicleStatus
-from src.domain.Vehicle import Bicycle, EBike, Scooter
+from src.domain.vehicle import Bicycle, EBike, Scooter
 
 VEHICLE_ROWS = [
     {

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from src.domain.enums import VehicleStatus
-from src.domain.Vehicle import Bicycle, EBike, Scooter, Vehicle
-from src.domain.VehicleContainer import Station
+from src.domain.vehicle import Bicycle, EBike, Scooter, Vehicle
+from src.domain.vehicle_container import Station
 
 
 class DataLoader(ABC):

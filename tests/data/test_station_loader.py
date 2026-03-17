@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from src.data.loaders import StationDataLoader
-from src.domain.VehicleContainer import Station
+from src.domain.vehicle_container import Station
 
 STATION_ROWS = [
     {

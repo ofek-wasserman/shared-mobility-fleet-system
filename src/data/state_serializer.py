@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from src.domain.enums import VehicleLocation, VehicleStatus
 from src.domain.ride import Ride
 from src.domain.user import User
-from src.domain.VehicleContainer import DegradedRepo
+from src.domain.vehicle_container import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 
 if TYPE_CHECKING:

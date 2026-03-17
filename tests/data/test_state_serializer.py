@@ -7,8 +7,8 @@ from pathlib import Path
 from src.data.state_serializer import SCHEMA_VERSION, save_state
 from src.domain.enums import VehicleStatus
 from src.domain.ride import Ride
-from src.domain.Vehicle import Bicycle, EBike, Scooter
-from src.domain.VehicleContainer import DegradedRepo, Station
+from src.domain.vehicle import Bicycle, EBike, Scooter
+from src.domain.vehicle_container import DegradedRepo, Station
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.fleet_manager import FleetManager
 

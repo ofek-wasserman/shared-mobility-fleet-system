@@ -4,7 +4,7 @@ import pytest
 
 from src.domain.enums import VehicleLocation, VehicleStatus
 from src.domain.exceptions import ConflictError
-from src.domain.Vehicle import Bicycle, EBike, Scooter
+from src.domain.vehicle import Bicycle, EBike, Scooter
 
 # =====================================================
 # Fixtures (Reusable Mock Instances)

@@ -7,7 +7,7 @@ import pytest
 
 from src.domain.enums import VehicleStatus
 from src.domain.exceptions import ConflictError, InvalidInputError, NotFoundError
-from src.domain.VehicleContainer import DegradedRepo
+from src.domain.vehicle_container import DegradedRepo
 from src.services.active_rides import ActiveRidesRegistry
 from src.services.billing import BillingService
 from src.services.fleet_manager import FleetManager
