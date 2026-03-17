@@ -280,8 +280,15 @@ class TestFleetManager:
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
         fm.users = {1: MagicMock()}
 
-        # simulate active ride for user
-        fm.active_rides.rides_by_user[1] = 999
+        # Use public registry API instead of touching rides_by_user directly
+        active_ride = MagicMock(
+            ride_id=999,
+            user_id=1,
+            vehicle_id="V010",
+            start_time=datetime.datetime(2026, 1, 1, 10, 0),
+            start_station_id=1,
+        )
+        fm.active_rides.add(active_ride)
 
         with pytest.raises(ConflictError, match="already has an active ride"):
             fm.start_ride(user_id=1, location=(0.0, 0.0))
@@ -655,7 +662,14 @@ class TestFleetManager:
     def test_active_user_ids_returns_sorted_active_users(self):
         fm = FleetManager(stations={}, vehicles={}, active_rides=ActiveRidesRegistry())
 
-        fm.active_rides.rides_by_user = {5: 100, 2: 101, 9: 102}
+        t = datetime.datetime(2026, 1, 1, 10, 0)
+        r1 = MagicMock(ride_id=100, user_id=5, vehicle_id="V005", start_time=t, start_station_id=1)
+        r2 = MagicMock(ride_id=101, user_id=2, vehicle_id="V002", start_time=t, start_station_id=1)
+        r3 = MagicMock(ride_id=102, user_id=9, vehicle_id="V009", start_time=t, start_station_id=1)
+
+        fm.active_rides.add(r1)
+        fm.active_rides.add(r2)
+        fm.active_rides.add(r3)
 
         assert fm.active_user_ids() == [2, 5, 9]
 
@@ -823,7 +837,9 @@ class TestFleetManager:
         treated = fm.apply_treatment(treatment_location=(0.0, 0.0))
 
         assert treated == ["V010"]
-        v1.apply_treatment.assert_called_once()
+
+        today = datetime.date.today()
+        v1.apply_treatment.assert_called_once_with(today)
         v2.apply_treatment.assert_not_called()
 
 
@@ -867,6 +883,8 @@ class TestFleetManager:
         assert calls[1] == ("station_add", "V999")
 
         v_deg.dock_to_station.assert_called_with(7)
+        today = datetime.date.today()
+        v_deg.apply_treatment.assert_called_with(today)
 
 
     def test_apply_treatment_degraded_vehicle_no_station_free_slot_raises_conflict(self):
@@ -952,7 +970,8 @@ class TestFleetManager:
         treated = fm.apply_treatment(treatment_location=(0.0, 0.0))
 
         assert treated.count("V999") == 1
-        v999.apply_treatment.assert_called_once()
+        today = datetime.date.today()
+        v999.apply_treatment.assert_called_once_with(today)
 
 
     # -----------------------------
@@ -1055,3 +1074,72 @@ class TestFleetManager:
 
         with pytest.raises(ConflictError, match="Vehicle not in user active ride"):
             fm.report_degraded(vehicle_id="V010", user_id=1)
+
+    #------------------
+    # service integration tests
+    #------------------
+    def test_integration_start_degrade_treat_flow_state_transitions(self):
+        # Real registry
+        active = ActiveRidesRegistry()
+
+        # Repo membership tracked by real set
+        repo_ids = set()
+
+        degraded_repo = MagicMock()
+        degraded_repo.get_vehicle_ids.side_effect = lambda: set(repo_ids)
+        degraded_repo.add_vehicle.side_effect = lambda vid: repo_ids.add(vid)
+        degraded_repo.remove_vehicle.side_effect = lambda vid: repo_ids.remove(vid)
+
+        # Station inventory tracked by real set
+        station_inventory = {"V010"}
+        station = MagicMock(container_id=7, lat=0.0, lon=0.0)
+        station.get_vehicle_ids.side_effect = lambda: set(station_inventory)
+        station.remove_vehicle.side_effect = lambda vid: station_inventory.remove(vid)
+        station.add_vehicle.side_effect = lambda vid: station_inventory.add(vid)
+        station.has_free_slot.return_value = True
+        station.has_available_vehicle.return_value = True
+
+        fm = FleetManager(stations={7: station}, vehicles={}, active_rides=active, degraded_repo=degraded_repo)
+
+        # Register user
+        user_id = fm.register_user("tok_test")
+
+        # Vehicle
+        vehicle = MagicMock(vehicle_id="V010", rides_since_last_treated=0)
+        vehicle.checkout_to_ride = MagicMock()
+        vehicle.move_to_repo = MagicMock()
+        vehicle.mark_degraded = MagicMock()
+        vehicle.dock_to_station = MagicMock()
+        vehicle.can_initiate_treatment.return_value = False
+        vehicle.is_eligible.return_value = True
+        vehicle.apply_treatment = MagicMock()
+        fm.vehicles = {"V010": vehicle}
+
+        # Start ride (uses station inventory)
+        fm.nearest_station_with_available_vehicle = MagicMock(return_value=station)
+        fm._generate_ride_id = MagicMock(return_value=1)
+
+        ride, _ = fm.start_ride(user_id=user_id, location=(0.0, 0.0))
+        assert ride.ride_id == 1
+        assert fm.active_rides.has_active_ride_for_user(user_id) is True
+        assert "V010" not in station_inventory  # removed on start
+
+        # Report degraded (moves to repo + completes ride)
+        ride.report_degraded = MagicMock()
+        fm.report_degraded(vehicle_id="V010", user_id=user_id)
+
+        assert fm.active_rides.has_active_ride_for_user(user_id) is False
+        assert 1 in fm.completed_rides
+        assert "V010" in repo_ids
+
+        # Apply treatment (degraded vehicle removed from repo and returned to station)
+        fm._nearest_station_with_free_slot = MagicMock(return_value=station)
+        treated = fm.apply_treatment(treatment_location=(0.0, 0.0))
+
+        assert "V010" in treated
+        assert "V010" not in repo_ids
+        assert "V010" in station_inventory
+        vehicle.dock_to_station.assert_called_with(7)
+
+        today = datetime.date.today()
+        vehicle.apply_treatment.assert_called_with(today)
