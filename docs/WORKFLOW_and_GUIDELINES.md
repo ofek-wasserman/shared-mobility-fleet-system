@@ -11,10 +11,10 @@ Sharing API project.
 
 The goal is to:
 
--   Prevent scope creep\
--   Prevent architectural violations\
--   Maintain integration stability\
--   Ensure consistent quality\
+-   Prevent scope creep
+-   Prevent architectural violations
+-   Maintain integration stability
+-   Ensure consistent quality
 -   Enforce disciplined PR process
 
 These rules apply to **all contributors**.
@@ -27,7 +27,7 @@ These rules apply to **all contributors**.
 -   Each Jira issue must include:
     -   Clear description
     -   Acceptance criteria
-    -   Phase label (Phase01 or Phase02)
+    -   Relevant labels (if applicable)
 -   If a PR is not merged, the issue is NOT DONE.
 
 ------------------------------------------------------------------------
@@ -54,6 +54,7 @@ Before starting any work:
 
     git checkout main
     git pull origin main
+    git checkout -b feature/KAN-XX-description
 
 Never start working on an outdated base.
 
@@ -115,33 +116,25 @@ CI must pass before merge.
 
 Files must be placed in the correct layer:
 
--   `src/api/` → API layer only (routes, schemas, HTTP mapping)
+-   `src/api/` → API layer only (routes, schemas, dependencies, HTTP mapping)
 -   `src/services/` → business orchestration only
 -   `src/domain/` → entities and invariants only (NO I/O)
--   `src/data/` → CSV loading only
--   `tests/` → mirrored structure by layer
+-   `src/data/` → CSV loading and persistence utilities
+-   `src/bootstrap.py` → application bootstrap logic
+-   `tests/` → mirrors the project structure by layer
 
 No cross-layer leakage is allowed.
 
 ------------------------------------------------------------------------
 
-## 9. Phase Scope Enforcement
+## 9. Scope Enforcement
 
-Implementation must stay within the current Phase.
-
-For Phase 1, scope is limited to:
-
--   CSV bootstrap
--   Register user
--   Start ride (deterministic vehicle selection)
--   End ride (nearest station, fixed 15 ILS pricing)
+Implementation must follow the agreed project requirements and current system behavior.
 
 Do NOT:
-
--   Add persistence (Phase 2)
--   Add future features
--   Introduce speculative design
--   Implement out-of-scope logic
+- Introduce features that contradict DECISIONS.md
+- Add speculative or unused functionality
+- Modify core behavior without team alignment
 
 ------------------------------------------------------------------------
 
@@ -204,7 +197,7 @@ Before requesting review:
 
 ## 14. Commit Message Rule
 
-Every commit must start with the Jira key.
+Commits should include the Jira key when relevant.
 
 Example:
 
@@ -222,7 +215,7 @@ Before pushing, ask:
 -   Is this the minimal correct solution?
 -   Does this respect the architecture boundaries?
 
-If unsure --- do not push.
+If unsure - do not push.
 
 ------------------------------------------------------------------------
 

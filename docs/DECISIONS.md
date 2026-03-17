@@ -1,7 +1,7 @@
-# Project Decisions (Source of Truth)
+# Project Decisions (Source of Truth for System Behavior)
 
 This file freezes technical decisions so the implementation stays consistent across the team.
-If a rule affects correctness, it must appear here.
+If a rule affects correctness or system behavior, it must appear here.
 
 ---
 
@@ -27,6 +27,17 @@ No randomness is allowed anywhere in the system.
 
 ---
 
+## Determinism Guarantee
+
+All system behavior is deterministic:
+- No randomness is used
+- Tie-breaking rules are explicitly defined
+- Persistence output is ordered and stable
+
+This ensures reproducibility across runs and environments.
+
+---
+
 ## Distance Calculation
 
 - Use Euclidean distance on (latitude, longitude) for all "nearest station" logic.
@@ -36,7 +47,7 @@ No randomness is allowed anywhere in the system.
 
 ## Pricing
 
-- Fixed price of 15 ILS per successful ride.
+- Fixed price of 15 ILS per successful ride (no dynamic pricing).
 - Fixed price of 0 ILS per reported degraded ride.
 
 Pricing logic lives strictly in the service layer.
@@ -45,17 +56,11 @@ Pricing logic lives strictly in the service layer.
 
 ## Error Mapping (Service → API)
 
-400:
-Invalid input (schema/type/validation)
+400: Invalid input (schema/type/validation)
 
-404:
-Entity not found (user/vehicle/station/ride missing)
+404: Entity not found (user/vehicle/station/ride missing)
 
-409:
-Invalid state transition
-(e.g., user already has active ride,
-no eligible vehicles,
-destination station full)
+409: Invalid state transition (e.g., user already has active ride, no eligible vehicles, destination station full)
 
 Service layer raises domain/service errors.
 API layer translates them into HTTP responses.
@@ -64,10 +69,12 @@ API layer translates them into HTTP responses.
 
 ## Persistence Strategy
 
+- Persistence is triggered after every successful state-changing API operation.
 - Static base data is loaded from CSV on startup.
 - Mutable runtime state is persisted to `state.json`.
 - On startup, if `state.json` exists, runtime state is restored on top of the CSV-loaded base data.
 - Restart behavior must not corrupt or duplicate runtime state.
+- All persisted structures must be deterministic to ensure reproducible state across runs.
 
 ---
 
@@ -192,7 +199,10 @@ On startup, if `state.json` exists:
 5. Rebuild `vehicle.active_ride_id` for each vehicle referenced in `active_rides` (this field is not stored in `vehicles` and must be derived)
 6. Restore completed rides history from `completed_rides`
 7. Restore `DegradedRepo` from `degraded_repo`
-8. Rebuild station inventories: clear all station inventories first (so no CSV bootstrap inventory remains), then for each vehicle whose `station_id` is non-null in `vehicles`, add it to that station's inventory. Vehicles in active rides or in the degraded repo must not appear in any station inventory.
+8. Rebuild station inventories:
+   - Clear all station inventories first to avoid duplication with CSV bootstrap data
+   - For each vehicle with non-null station_id, add it to the corresponding station
+   - Vehicles in active rides or in the degraded repo must not appear in any station inventory
 9. Set ID counters to `next_user_id` and `next_ride_id`
 
 If `state.json` does not exist, fall back to CSV-only bootstrap.
@@ -211,11 +221,9 @@ If `state.json` does not exist, fall back to CSV-only bootstrap.
 
 ## Fleet Invariants
 
-The following invariants must always hold during runtime.
+The following invariants must always hold throughout system runtime.
 
----
-
-## Vehicle Eligibility
+### Vehicle Eligibility
 
 A vehicle is considered eligible (rentable) if:
 
@@ -223,11 +231,15 @@ A vehicle is considered eligible (rentable) if:
 - active_ride_id is None
 - rides_since_last_treated <= 10
 
+### Degradation Rules
+
 Vehicle degradation rules:
 
 - A vehicle becomes unrentable (degraded) if:
   - rides_since_last_treated > 10, or
   - a user reports it as degraded
+
+### Treatment Rules
 
 Maintenance / treatment rules:
 
@@ -241,18 +253,8 @@ Eligibility rules may expand in the future, but the concept of eligibility remai
 
 ## Battery Handling (Deferred Extension)
 
-Battery support for electric vehicles (`EBike`, `Scooter`) exists in the domain model through the `charge_pct` field and helper methods such as `consume_charge()` and `recharge()`.
-
-Battery is currently **not part of the active project rules** and is treated as a deferred extension.
-
-In the current implementation, battery does **not**:
-- affect ride eligibility
-- affect treatment flow
-- affect vehicle placement or degraded repository logic
-- affect persistence (`state.json`)
-- change during rides or treatment
-
-Battery-related fields and helper methods remain in the code only as optional extension hooks for future development.
+Battery support exists in the domain model (e.g., charge_pct) but is currently not part of active system rules.
+It does not affect eligibility, treatment, persistence, or ride flow, and remains as a future extension hook.
 
 ---
 
@@ -280,7 +282,6 @@ FleetManager must validate all loaded vehicles and normalize system state:
 - Ineligible vehicles must be placed in the appropriate repository.
 - Regular stations must end initialization containing only eligible vehicles.
 
-This invariant must be maintained on every state transition
-(start ride, end ride, maintenance handling).
+This invariant must be maintained on every state transition (start ride, end ride, maintenance handling).
 
 ---

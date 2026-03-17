@@ -1,6 +1,6 @@
 # Vehicle Sharing API — Advanced Programming Final Project
 
-Backend system for a vehicle-sharing service, implemented according to the official course requirements.
+A backend system for a vehicle-sharing service, implementing ride lifecycle management including user registration, ride handling, vehicle allocation, and maintenance flows.
 
 ## Tech Stack
 - Python 3.12
@@ -31,29 +31,49 @@ Run tests:
 Run server:
     uvicorn src.main:app --reload
 
+## API Usage Examples
+
+Start server, then:
+
+Register user:
+    POST /register
+
+Start ride:
+    POST /ride/start
+
+End ride:
+    POST /ride/end
+
+## Supported Features
+
+The system supports the following core functionalities:
+
+- User registration with unique payment token
+- Starting a ride with deterministic vehicle selection
+- Ending a ride with automatic station selection and billing
+- Reporting a vehicle as degraded during a ride
+- Vehicle treatment and reintegration into stations
+- Retrieval of nearest station based on location
+- Retrieval of currently active users
+
+The API uses structured error handling with appropriate HTTP status codes (400, 404, 409).
+
 ## Architecture
 
-Layered architecture:
+The system follows a layered architecture:
 
-API Layer
-→ FastAPI routes and HTTP handling
+- API Layer  
+  Handles HTTP requests, validation, and response mapping using FastAPI.
 
-Services Layer
-→ Business logic (ride lifecycle, deterministic selection, pricing)
+- Service Layer  
+  Contains business logic and orchestrates workflows such as ride start/end, pricing, and vehicle treatment.
 
-Domain Layer
-→ Entities and invariants (Vehicle, Station, Ride, User)
+- Domain Layer  
+  Defines core entities (Vehicle, Ride, User, Station) and enforces invariants.
 
-Data Layer
-→ CSV loading and persistence utilities
+- Data Layer  
+  Responsible for CSV loading and state persistence (state.json).
 
-## Thin Slice (Phase 1)
-
-End-to-end working flow:
-1. Load stations.csv and vehicles.csv
-2. Register user
-3. Start ride (deterministic vehicle selection)
-4. End ride (deterministic docking + price calculation)
 
 ## Workflow
 
