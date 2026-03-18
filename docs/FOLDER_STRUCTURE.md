@@ -18,7 +18,6 @@ project/
 │  └─ data/                      # CSV loaders and persistence helpers
 │
 ├─ tests/                        # All tests (mirrors src/ structure where applicable)
-│  ├─ __init__.py
 │  ├─ conftest.py                # Shared pytest fixtures and test setup
 │  ├─ test_smoke.py              # Basic import/bootstrap sanity test
 │  ├─ test_bootstrap.py          # Bootstrap and startup-related tests
