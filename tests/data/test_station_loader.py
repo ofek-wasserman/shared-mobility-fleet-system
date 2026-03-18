@@ -1,4 +1,4 @@
-"""Tests for KAN-30 Station loader"""
+"""Tests for station loader."""
 
 import csv
 from pathlib import Path

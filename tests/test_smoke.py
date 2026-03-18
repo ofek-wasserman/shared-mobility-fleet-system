@@ -42,7 +42,7 @@ class TestRouteRegistration:
     def test_register_route_registered(self, app: FastAPI) -> None:
         assert "/register" in route_paths(app)
 
-    # Keep this only if /health exists in your KAN-16 app
+    # Keep this only if /health exists in this app
     def test_health_route_registered(self, app: FastAPI) -> None:
         assert "/health" in route_paths(app)
 
@@ -52,7 +52,7 @@ class TestRouteRegistration:
 # ---------------------------------------------------------------------------
 
 class TestHttpBehaviour:
-    # Keep these only if /health exists in your KAN-16 app
+    # Keep these only if /health exists in this app
     def test_health_returns_200(self, client: TestClient) -> None:
         assert client.get("/health").status_code == 200
 

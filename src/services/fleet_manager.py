@@ -43,7 +43,7 @@ class FleetManager:
     # initializer vehicle state normalization
     #-----------------------------
     def _initialize_state(self) -> None:
-        """Normalize loaded state after CSV bootstrap (Phase 1).
+        """Normalize loaded state after CSV bootstrap.
 
         Assumptions:
         - CSV bootstrap must not contain active rides.
@@ -55,7 +55,7 @@ class FleetManager:
         - Move unrentable vehicles ( >10 rides) to the Degraded Repository.
         """
         for vehicle_id, vehicle in self.vehicles.items():
-            # Phase 1 contract: no active rides at bootstrap
+            # Bootstrap contract: no active rides in loaded CSV state
             if getattr(vehicle, "active_ride_id", None) is not None:
                 raise InvalidInputError(
                     "Invalid bootstrap state: vehicle "
@@ -176,8 +176,7 @@ class FleetManager:
         if nearest_station is None:
             raise ConflictError("No station with free slot available")
 
-        # define end_time after start_time
-        end_time= datetime.datetime.now()
+        end_time = datetime.datetime.now()
 
         user = self.users.get(ride.user_id)
         if user is None:
@@ -262,7 +261,7 @@ class FleetManager:
                             if vid not in degraded_ids
                             and self.vehicles[vid].can_initiate_treatment()]
 
-        # for degraded vehicles
+        # Treat degraded vehicles and dock them back to a station.
         for vehicle_id in degraded_ids:
             nearest_station = self._nearest_station_with_free_slot(location=treatment_location)
             if nearest_station is None:
@@ -276,7 +275,7 @@ class FleetManager:
             degr_vehicle.dock_to_station(nearest_station.container_id)
             treated.append(vehicle_id)
 
-        # for eligible vehicles that can have a treatment
+        # Treat non-degraded vehicles eligible for maintenance.
         for vehicle_id in non_degraded_ids:
             vehicle = self.vehicles[vehicle_id]
             vehicle.apply_treatment(today)

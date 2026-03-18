@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 class BillingService:
-    """Simple billing service for Phase 1 - fixed price"""
+    """Simple billing service with a fixed ride price."""
 
     FIXED_PRICE = 15.0
 
@@ -11,12 +11,12 @@ class BillingService:
     ) -> float:
         """
         Calculate ride price.
-        Phase 1: fixed 15 ILS, free if degraded reported
+        Uses a fixed price and returns free for reported degraded rides.
         """
         if reported_degraded:
             return 0.0
         return self.FIXED_PRICE
 
     def process_payment(self, user_payment_token: str, amount: float) -> bool:
-        """Mock payment processing - always succeeds in Phase 1"""
+        """Mock payment processing that always succeeds."""
         return True

@@ -1,4 +1,4 @@
-"""Tests for KAN-87 – state_serializer.save_state."""
+"""Tests for state_serializer.save_state."""
 
 import json
 from datetime import date, datetime
