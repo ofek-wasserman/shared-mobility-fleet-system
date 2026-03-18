@@ -1,4 +1,4 @@
-"""Tests for required CSV column validation in DataLoader (KAN-67)"""
+"""Tests for required CSV column validation in DataLoader."""
 
 import csv
 from pathlib import Path

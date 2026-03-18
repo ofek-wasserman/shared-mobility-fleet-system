@@ -5,9 +5,6 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-# Import your domain/service exception base types.
-# If you don't have them yet, create:
-#   src/domain/exceptions.py -> InvalidInputError, NotFoundError, ConflictError
 from src.domain.exceptions import ConflictError, InvalidInputError, NotFoundError
 
 
