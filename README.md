@@ -18,31 +18,57 @@ A backend system for a vehicle-sharing service, implementing ride lifecycle mana
 
 ## Local Setup
 
-Create virtual environment:
+Run the project locally with Python 3.12:
+
+1. Create and activate a virtual environment:
     python3.12 -m venv .venv
     source .venv/bin/activate
 
-Install dependencies:
+2. Install dependencies:
     python -m pip install -r requirements.txt
 
-Run tests:
+3. Run tests:
     python -m pytest -q
 
-Run server:
+4. Start the API server:
     uvicorn src.main:app --reload
 
-## API Usage Examples
+5. Open the API in your browser:
+    http://127.0.0.1:8000/docs
 
-Start server, then:
+## API Usage
 
-Register user:
-    POST /register
+After starting the server, the main endpoints are available through the API documentation page (`/docs`).
 
-Start ride:
-    POST /ride/start
+Main endpoints:
+- POST /register
+- POST /ride/start
+- POST /ride/end
+- POST /vehicle/treat
+- POST /vehicle/report-degraded
+- GET /stations/nearest
+- GET /rides/active-users
 
-End ride:
-    POST /ride/end
+### Example Requests
+
+Register a user:
+POST /register
+{
+  "payment_token": "token_123"
+}
+
+Start a ride:
+POST /ride/start
+{
+  "user_id": 1,
+  "lat": 32.0853,
+  "lon": 34.7818
+}
+
+## Notes
+
+- Initial system data is loaded from the CSV files in the `data/` directory.
+- Runtime state is persisted in `state.json`.
 
 ## Supported Features
 
